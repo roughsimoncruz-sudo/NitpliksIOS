@@ -17,8 +17,10 @@ workflows:
           if [ ! -f www/index.html ]; then
             echo '<!DOCTYPE html><html><head><title>Nitpliks</title></head><body>Loading...</body></html>' > www/index.html
           fi
-      - name: Sync Capacitor iOS (Auto-generates platform & Podfile)
-        script: npx cap sync ios
+      - name: Add and Sync iOS Platform
+        script: |
+          npx cap add ios || true
+          npx cap sync ios
       - name: Install Pods and Build IPA
         script: |
           cd ios/App
