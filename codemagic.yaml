@@ -21,6 +21,8 @@ workflows:
           fi
       - name: Sync Capacitor iOS
         script: npx cap sync ios
+      - name: Block player pop-ups in iOS
+        script: cp native/ios-capacitor/SceneDelegate.swift ios/App/App/SceneDelegate.swift
       - name: Hide iOS status bar
         script: |
           /usr/libexec/PlistBuddy \
