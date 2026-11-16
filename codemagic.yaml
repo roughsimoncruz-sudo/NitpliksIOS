@@ -7,18 +7,20 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Install npm dependencies
-        script: npm install
+      - name: Install dependencies and Capacitor iOS
+        script: |
+          npm install
+          npm install @capacitor/ios --save
       - name: Ensure www folder exists
         script: |
           mkdir -p www
           if [ ! -f www/index.html ]; then
             echo '<!DOCTYPE html><html><head><title>Nitpliks</title></head><body>Loading...</body></html>' > www/index.html
           fi
-      - name: Add and Sync iOS Platform
-        script: |
-          npx cap add ios || true
-          npx cap sync ios
+      - name: Add iOS Platform
+        script: npx cap add ios
+      - name: Sync Capacitor iOS
+        script: npx cap sync ios
       - name: Install CocoaPods
         script: |
           cd ios/App
