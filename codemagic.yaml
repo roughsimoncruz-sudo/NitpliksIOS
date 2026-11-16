@@ -17,14 +17,18 @@ workflows:
           if [ ! -f www/index.html ]; then
             echo '<!DOCTYPE html><html><head><title>Nitpliks</title></head><body>Loading...</body></html>' > www/index.html
           fi
-      - name: Add and Sync iOS Platform
+      - name: Clean and Add iOS Platform
         script: |
-          npx cap add ios || true
-          npx cap sync ios
-      - name: Install Pods and Build IPA
+          rm -rf ios
+          npx cap add ios
+      - name: Sync Capacitor iOS
+        script: npx cap sync ios
+      - name: Install CocoaPods
         script: |
           cd ios/App
           pod install
-          xcode-project build-ipa --workspace "App.xcworkspace" --scheme "App"
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa --workspace "ios/App/App.xcworkspace" --scheme "App"
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
