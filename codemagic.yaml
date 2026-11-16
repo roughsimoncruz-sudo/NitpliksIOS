@@ -5,30 +5,19 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       xcode: latest
-      cocoapods: default
     scripts:
       - name: Install dependencies
-        script: |
-          npm install
-          npm install @capacitor/ios --save
+        script: npm ci
       - name: Ensure www folder exists
         script: |
           mkdir -p www
           if [ ! -f www/index.html ]; then
             echo '<!DOCTYPE html><html><head><title>Nitpliks</title></head><body>Loading...</body></html>' > www/index.html
           fi
-      - name: Clean and Add iOS Platform
-        script: |
-          rm -rf ios
-          npx cap add ios
       - name: Sync Capacitor iOS
         script: npx cap sync ios
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install
       - name: Build IPA
         script: |
-          xcode-project build-ipa --workspace "ios/App/App.xcworkspace" --scheme "App"
+          xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
     artifacts:
       - ios/App/build/ios/ipa/*.ipa
