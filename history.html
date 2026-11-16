@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Watch History - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+</head>
+<body>
+    <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <a href="index.html" class="inline-flex min-h-10 items-center text-xs font-bold text-cyan-200">← Discover</a>
+        <header class="mt-7 sm:mt-8"><p class="text-[10px] font-black uppercase tracking-[.3em] text-cyan-200">Your account</p><h1 class="mt-2 text-4xl font-black">Watch History</h1><p class="mt-2 text-sm text-slate-400">Continue watching across your devices.</p></header>
+        <p id="status" class="mt-5 text-sm text-slate-400" role="status"></p>
+        <div id="history" class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6"></div>
+    </main>
+    <script>
+        function safeImage(value) { return /^https:\/\//.test(value || '') ? value : 'https://placehold.co/500x750/171717/ffffff?text=No+Poster'; }
+        fetch('sync.php', { credentials: 'same-origin' }).then(async response => {
+            const result = await response.json(); if (!response.ok) throw new Error(result.error || 'Sign in required.');
+            const items = (result.progress || []).sort((a,b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+            document.getElementById('status').textContent = `${items.length} saved title${items.length === 1 ? '' : 's'}`;
+            document.getElementById('history').replaceChildren(...items.map(item => {
+                const card = document.createElement('a'); card.href = `watch.html?id=${encodeURIComponent(`${item.title || 'Untitled'} (${item.id})`)}&type=${item.type || 'movie'}&season=${item.season || 1}&episode=${item.episode || 1}`; card.className = 'overflow-hidden rounded-xl border border-white/10 bg-white/5';
+                const image = document.createElement('img'); image.src = safeImage(item.image); image.alt = `${item.title || 'Title'} poster`; image.className = 'aspect-[2/3] w-full object-cover';
+                const title = document.createElement('h2'); title.textContent = item.title || 'Untitled'; title.className = 'truncate px-3 pt-3 text-xs font-extrabold';
+                const meta = document.createElement('p'); const percent = item.duration ? Math.min(100, Math.round(item.position / item.duration * 100)) : 0; meta.textContent = item.type === 'tv' ? `S${item.season || 1} E${item.episode || 1} · ${percent}%` : `${percent}% watched`; meta.className = 'px-3 pb-3 pt-1 text-[10px] text-slate-400'; card.append(image,title,meta); return card;
+            }));
+        }).catch(error => { document.getElementById('status').textContent = error.message; });
+    </script>
+    <script src="visitor-log.js?v=2"></script>
+</body>
+</html>

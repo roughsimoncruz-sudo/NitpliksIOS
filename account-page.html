@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Account - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+</head>
+<body>
+    <main class="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <a href="index.html" class="inline-flex min-h-10 items-center text-xs font-bold text-cyan-200">← Discover</a>
+        <header class="mt-7 sm:mt-8"><p class="text-[10px] font-black uppercase tracking-[.3em] text-cyan-200">Account settings</p><h1 class="mt-2 text-4xl font-black">Your profile</h1></header>
+        <p id="status" class="mt-4 min-h-5 text-sm text-slate-400" role="status"></p>
+        <section class="glass-panel mt-6 rounded-2xl p-4 sm:p-5">
+            <h2 class="text-lg font-extrabold">Profile</h2>
+            <form id="profileForm" class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+                <input id="username" required minlength="3" maxlength="30" class="min-h-11 rounded-lg border px-3 text-sm" placeholder="Username">
+                <button class="rounded-lg bg-cyan-300 px-5 text-xs font-black uppercase text-slate-950">Save profile</button>
+            </form>
+            <p id="email" class="mt-3 text-xs text-slate-500"></p>
+        </section>
+        <section class="glass-panel mt-5 rounded-2xl p-4 sm:p-5">
+            <h2 class="text-lg font-extrabold">Change password</h2>
+            <form id="passwordForm" class="mt-4 grid gap-3">
+                <input id="currentPassword" type="password" required class="min-h-11 rounded-lg border px-3 text-sm" placeholder="Current password">
+                <input id="newPassword" type="password" minlength="8" required class="min-h-11 rounded-lg border px-3 text-sm" placeholder="New password">
+                <button class="w-fit rounded-lg bg-cyan-300 px-5 py-3 text-xs font-black uppercase text-slate-950">Update password</button>
+            </form>
+        </section>
+        <section class="glass-panel mt-5 rounded-2xl border-rose-300/20 p-4 sm:p-5">
+            <h2 class="text-lg font-extrabold text-rose-200">Delete account</h2>
+            <p class="mt-2 text-xs text-slate-400">This permanently deletes your account and synced library.</p>
+            <button id="deleteAccount" class="mt-4 rounded-lg border border-rose-300/30 px-5 py-3 text-xs font-black uppercase text-rose-200">Delete permanently</button>
+        </section>
+        <section class="glass-panel mt-5 rounded-2xl p-4 sm:p-5">
+            <h2 class="text-lg font-extrabold">Password recovery</h2>
+            <p class="mt-2 text-xs text-slate-400">For local development, this generates a one-time reset link instead of sending email.</p>
+            <form id="recoveryForm" class="mt-4 flex flex-wrap gap-3">
+                <input id="recoveryEmail" type="email" required class="min-h-11 min-w-0 flex-1 rounded-lg border px-3 text-sm" placeholder="Account email">
+                <button class="rounded-lg border border-cyan-300/30 px-5 py-3 text-xs font-black uppercase text-cyan-200">Generate link</button>
+            </form>
+            <a id="recoveryLink" class="mt-3 hidden break-all text-xs font-bold text-cyan-200 underline"></a>
+        </section>
+    </main>
+    <script>
+        let csrfToken = '';
+        fetch('auth.php?action=me', {credentials:'same-origin'}).then(response => response.json()).then(result => { csrfToken = result.csrf_token || ''; });
+        async function request(action, options = {}) {
+            options.headers = {...(options.headers || {}), 'X-CSRF-Token': csrfToken};
+            const response = await fetch(`account.php?action=${action}`, { credentials: 'same-origin', ...options });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Request failed.');
+            return result;
+        }
+        const status = document.getElementById('status');
+        request('profile').then(result => {
+            document.getElementById('username').value = result.user.username;
+            document.getElementById('email').textContent = result.user.email;
+        }).catch(error => { status.textContent = error.message; });
+        document.getElementById('profileForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            try { await request('profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username: document.getElementById('username').value}) }); status.textContent = 'Profile saved.'; }
+            catch (error) { status.textContent = error.message; }
+        });
+        document.getElementById('passwordForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            try { await request('password', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({current_password: document.getElementById('currentPassword').value, new_password: document.getElementById('newPassword').value}) }); event.target.reset(); status.textContent = 'Password updated.'; }
+            catch (error) { status.textContent = error.message; }
+        });
+        document.getElementById('deleteAccount').addEventListener('click', async () => {
+            if (!confirm('Delete your account and all synced data permanently?')) return;
+            try { await request('delete', { method: 'POST' }); location.href = 'index.html'; }
+            catch (error) { status.textContent = error.message; }
+        });
+        document.getElementById('recoveryForm').addEventListener('submit', async event => {
+            event.preventDefault();
+            try {
+                const response = await fetch('auth.php?action=forgot', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken},
+                    body: JSON.stringify({email: document.getElementById('recoveryEmail').value})
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Unable to generate a reset link.');
+                const link = document.getElementById('recoveryLink');
+                link.classList.toggle('hidden', !result.reset_url);
+                if (result.reset_url) {
+                    link.href = result.reset_url;
+                    link.textContent = 'Open password reset link';
+                    status.textContent = 'One-time reset link generated.';
+                } else {
+                    status.textContent = result.message;
+                }
+            } catch (error) {
+                status.textContent = error.message;
+            }
+        });
+    </script>
+    <script src="visitor-log.js?v=2"></script>
+</body>
+</html>

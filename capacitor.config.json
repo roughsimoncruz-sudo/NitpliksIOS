@@ -1,0 +1,9 @@
+{
+  "appId": "com.nitpliks.app",
+  "appName": "Nitpliks",
+  "webDir": "www",
+  "server": {
+    "url": "https://nitpliks.baisql.me",
+    "cleartext": true
+  }
+}

@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Nitpliks">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Watching - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #020817;
+            --bg-surface: rgba(15, 23, 42, 0.82);
+            --panel-border: rgba(148, 163, 184, 0.18);
+            --accent: #67e8f9;
+            --accent-strong: #38bdf8;
+            --accent-alt: #8b5cf6;
+            --text: #f8fafc;
+            --muted: #a5b4cf;
+            --shadow-strong: 0 30px 70px rgba(2, 8, 23, 0.72);
+        }
+
+        * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(103, 232, 249, 0.14), transparent 22%),
+                radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.18), transparent 26%),
+                linear-gradient(180deg, #020817 0%, #020b1a 100%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .glass-nav {
+            background: rgba(2, 8, 23, 0.72);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+            box-shadow: 0 10px 24px rgba(2, 8, 23, 0.2);
+        }
+        .glass-panel {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.72));
+            backdrop-filter: blur(18px);
+            border: 1px solid var(--panel-border);
+            box-shadow: var(--shadow-strong);
+        }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), #000);
+            border-radius: 1.5rem;
+            overflow: hidden;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: 0;
+        }
+        #videoBox:fullscreen,
+        #videoBox:-webkit-full-screen {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 2147483647 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            min-height: 100vh !important;
+            padding: 0 !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #000 !important;
+        }
+        #videoBox iframe:fullscreen,
+        #videoBox iframe:-webkit-full-screen {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 2147483647 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: #000 !important;
+        }
+        @media (hover: none) and (min-width: 900px) {
+            body {
+                background: #020817;
+            }
+            .glass-nav,
+            .glass-panel {
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                box-shadow: 0 12px 28px rgba(0, 0, 0, .35);
+            }
+            .video-container {
+                background: #000;
+                border-radius: .75rem;
+            }
+            .spinner {
+                animation: none;
+            }
+        }
+        .player-select:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .server-choice {
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(2, 8, 23, 0.38);
+            color: var(--text);
+            transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+        }
+        .server-choice:hover {
+            border-color: rgba(251, 51, 72, 0.5);
+            background: rgba(225, 29, 53, 0.08);
+            transform: translateY(-1px);
+        }
+        .server-choice[aria-pressed="true"] {
+            border-color: rgba(251, 51, 72, 0.8);
+            background: linear-gradient(135deg, rgba(225, 29, 53, 0.18), rgba(15, 23, 42, 0.76));
+            box-shadow: inset 0 0 0 1px rgba(251, 51, 72, 0.16), 0 8px 22px rgba(225, 29, 53, 0.1);
+        }
+        .server-choice:focus-visible {
+            outline: 2px solid #fda4af;
+            outline-offset: 2px;
+        }
+        .action-btn {
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            padding: 0.7rem 1rem;
+            border-radius: 0.9rem;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+            color: #020817;
+            border-color: transparent;
+            box-shadow: 0 12px 24px rgba(56, 189, 248, 0.25);
+        }
+        .action-btn.secondary {
+            background: rgba(15, 23, 42, 0.7);
+            color: var(--text);
+        }
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 1rem;
+            padding: 0.9rem 1rem;
+        }
+        .metric-card span {
+            display: block;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            margin-bottom: 0.35rem;
+        }
+        .metric-card strong {
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
+        body {
+            background: linear-gradient(180deg, #080808, #111 46%, #080808);
+            color: #f8fafc;
+        }
+        .glass-nav {
+            background: linear-gradient(180deg, rgba(0,0,0,.92), rgba(0,0,0,.72));
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            box-shadow: 0 12px 30px rgba(0,0,0,.4);
+        }
+        .glass-nav a:hover { color: #fda4af; }
+        #seriesControls h4 { color: #fda4af; }
+        #seriesControls {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(251, 51, 72, .24);
+            background:
+                radial-gradient(circle at 100% 0, rgba(251, 51, 72, .14), transparent 12rem),
+                linear-gradient(145deg, rgba(25, 25, 25, .98), rgba(15, 15, 15, .96));
+        }
+        #seriesControls::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 3px;
+            background: #fb3348;
+        }
+        #seriesControls h4 {
+            font-size: .65rem;
+            letter-spacing: .2em;
+        }
+        #seriesControls .selector-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        #seriesControls .selector-title {
+            margin-top: .3rem;
+            color: #f8fafc;
+            font-size: 1rem;
+            font-weight: 900;
+        }
+        #seriesControls .selector-icon {
+            display: grid;
+            width: 2rem;
+            height: 2rem;
+            place-items: center;
+            border: 1px solid rgba(251, 51, 72, .35);
+            border-radius: .65rem;
+            color: #fda4af;
+            font-size: 1rem;
+        }
+        #seriesControls .selector-field label {
+            display: block;
+            margin-bottom: .45rem;
+            color: #a3a3a3;
+            font-size: .62rem;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+        #seriesControls .selector-field label span {
+            margin-right: .4rem;
+            color: #fb3348;
+            font-size: .56rem;
+        }
+        #seriesControls #seasonSelect,
+        #seriesControls #episodeSelect {
+            min-height: 3.25rem;
+            appearance: none;
+            padding: .8rem 2.7rem .8rem 1rem;
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: .75rem;
+            background: #171717;
+            color: #f8fafc;
+            cursor: pointer;
+            font-size: .78rem;
+            font-weight: 800;
+        }
+        #seriesControls .selector-select {
+            position: relative;
+        }
+        #seriesControls .selector-select::after {
+            content: "⌄";
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            color: #fb3348;
+            font-size: 1.1rem;
+            font-weight: 900;
+            pointer-events: none;
+            transform: translateY(-56%);
+        }
+        #seriesControls .season-tabs,
+        #seriesControls .episode-list {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(251, 51, 72, .7) transparent;
+        }
+        #seriesControls .season-tabs {
+            display: flex;
+            gap: .55rem;
+            overflow-x: auto;
+            padding: .35rem;
+            border: 1px solid rgba(255,255,255,.09);
+            border-radius: 1rem;
+            background: rgba(0,0,0,.2);
+        }
+        #seriesControls .season-tab {
+            min-width: 6rem;
+            flex-shrink: 0;
+            padding: .7rem .8rem;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: .75rem;
+            background: rgba(23,23,23,.9);
+            color: #a3a3a3;
+            text-align: left;
+            transition: border-color .2s ease, background .2s ease, color .2s ease;
+        }
+        #seriesControls .season-tab[aria-selected="true"] {
+            border-color: rgba(251,51,72,.8);
+            background: linear-gradient(145deg, rgba(225,29,53,.28), rgba(38,38,38,.96));
+            color: #fff;
+            box-shadow: 0 0 0 1px rgba(251,51,72,.12), 0 8px 20px rgba(225,29,53,.14);
+        }
+        #seriesControls .episode-list {
+            display: grid;
+            max-height: 15rem;
+            gap: .55rem;
+            overflow-y: auto;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        #seriesControls .episode-card {
+            min-height: 4.8rem;
+            padding: .75rem;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: .8rem;
+            background: rgba(23,23,23,.8);
+            color: #fff;
+            text-align: left;
+        }
+        #seriesControls .episode-card[aria-current="true"] {
+            border-color: rgba(251,51,72,.85);
+            background: linear-gradient(135deg, rgba(225,29,53,.22), rgba(23,23,23,.94));
+            box-shadow: inset 3px 0 #fb3348;
+        }
+        #seriesControls .episode-card:focus-visible,
+        #seriesControls .season-tab:focus-visible {
+            outline: 2px solid #fda4af;
+            outline-offset: 2px;
+        }
+        @media (max-width: 640px) {
+            #seriesControls .episode-list { grid-template-columns: 1fr; }
+        }
+        #seasonSelect, #episodeSelect {
+            background-color: #171717;
+            border-color: rgba(255,255,255,.14);
+        }
+        #seasonSelect:focus, #episodeSelect:focus { border-color: #fb3348; }
+        #modalTypeBadge {
+            color: #fda4af;
+            background: rgba(225,29,53,.12);
+            border-color: rgba(251,51,72,.25);
+        }
+        #modalGenres > span { background: #1b1b1b; border-color: rgba(255,255,255,.1); }
+        #modalTitle {
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            font-weight: 500;
+            letter-spacing: -.04em;
+            line-height: .96;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                scroll-behavior: auto !important;
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+            }
+        }
+        body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after {
+            scroll-behavior: auto !important;
+            animation-duration: .01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .01ms !important;
+            overflow-wrap: anywhere;
+            text-shadow: 0 6px 20px rgba(0, 0, 0, 0.26);
+        }
+        #watchNowButton[disabled] {
+            cursor: default;
+            opacity: .7;
+            filter: saturate(.7);
+        }
+        @media (min-width: 768px) {
+            #modalTitle { max-width: 62%; font-size: clamp(2.3rem, 4vw, 4.3rem); }
+        }
+        @media (max-width: 767px) {
+            #modalTitle { max-width: 100%; font-size: clamp(2.1rem, 9vw, 3.2rem); }
+        }
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(25,25,25,.97), rgba(15,15,15,.96));
+            border-color: rgba(255,255,255,.1);
+            box-shadow: 0 24px 60px rgba(0,0,0,.42);
+        }
+        .video-container {
+            border-radius: 0;
+            background: #000;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+        }
+        .player-shell { border: 1px solid rgba(255,255,255,.12); }
+        .player-select:focus-visible { outline-color: #fb3348; }
+        .action-btn.primary { background: #e11d35; color: #fff; box-shadow: 0 10px 24px rgba(225,29,53,.2); }
+        .action-btn.primary:hover { background: #f43f5e; }
+        .action-btn.secondary, .metric-card { background: #1b1b1b; border-color: rgba(255,255,255,.1); }
+        .metric-card span { color: #a3a3a3; }
+        ::selection { background: #e11d35; color: #fff; }
+        @media (max-width: 640px) {
+            .video-container { border-radius: 0; }
+        }
+        :focus-visible { outline: 2px solid #fb3348; outline-offset: 3px; }
+    </style>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+    <link rel="stylesheet" href="watch-redesign.css?v=20261117a">
+    <script src="profile-storage.js"></script>
+    <script src="sync.js"></script>
+</head>
+<body class="watch-page selection:bg-sky-400 selection:text-slate-950">
+    <!-- Navbar -->
+    <nav class="glass-nav sticky top-0 left-0 right-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="index.html" class="flex shrink-0 items-center gap-2.5 text-white font-extrabold text-sm hover:text-rose-300 transition-colors">
+                <img class="site-logo" src="nitpliks-logo.png?v=40" width="160" height="53" alt="Nitpliks home">
+            </a>
+            <div class="hidden items-center gap-5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 sm:flex">
+                <a href="kdrama.html" class="hover:text-rose-300">K-Drama</a>
+                <a href="anime.html" class="hover:text-rose-300">Anime</a>
+                <a href="marvel.html" class="hover:text-rose-300">Marvel</a>
+                <a href="my-list.html" class="hover:text-rose-300">My List</a>
+                <a href="release-calendar.html" class="hover:text-rose-300">Releases</a>
+                <a href="my-ratings.html" class="hover:text-rose-300">My Ratings</a>
+            </div>
+            <span id="navTitle" class="text-xs font-bold text-slate-400 truncate max-w-xs">Loading...</span>
+        </div>
+    </nav>
+
+    <!-- Content Area -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8 space-y-6 flex-1">
+        
+        <div id="mediaError" role="alert" class="hidden rounded-xl border border-rose-500/30 bg-rose-950/30 p-4 text-sm text-rose-200">
+            <span id="mediaErrorText"></span>
+            <button id="retryMediaButton" type="button" class="ml-2 font-bold underline underline-offset-2">Try again</button>
+        </div>
+        <section class="hidden rounded-xl border border-amber-500/20 bg-amber-950/20 p-4" id="reportPanel" aria-labelledby="reportHeading">
+            <div class="flex items-start justify-between gap-3">
+                <div><h2 id="reportHeading" class="text-sm font-extrabold text-white">Report playback issue</h2><p class="mt-1 text-xs text-slate-400">This creates a report on this device; it does not send automatically.</p></div>
+                <button id="closeReportButton" type="button" class="rounded-lg border border-white/10 px-3 py-1 text-xs" aria-label="Close report form">Close</button>
+            </div>
+            <label for="issueDescription" class="mt-3 block text-[10px] font-bold uppercase text-slate-400">What happened?</label>
+            <textarea id="issueDescription" rows="3" maxlength="500" class="mt-1 w-full rounded-lg border border-white/10 bg-black/40 p-3 text-xs text-white" placeholder="Describe the issue (for example: no video, wrong episode, or subtitles missing)."></textarea>
+            <div class="mt-3 flex flex-wrap items-center gap-3">
+                <button id="saveReportButton" type="button" class="rounded-lg bg-rose-700 px-4 py-2 text-xs font-extrabold hover:bg-rose-600">Save &amp; copy report</button>
+                <p id="reportStatus" role="status" aria-live="polite" class="text-xs text-slate-400"></p>
+            </div>
+        </section>
+
+        <!-- Video Player Box -->
+        <div class="glass-panel player-shell overflow-hidden shadow-2xl">
+            <div id="videoBox" class="video-container">
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 text-xs font-semibold gap-3 absolute inset-0">
+                    <div class="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full spinner"></div>
+                    <span>Loading player…</span>
+                </div>
+            </div>
+            <div id="playerControls" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+                <p class="w-full text-[11px] font-semibold text-slate-400">Change server if playback does not work.</p>
+                <label for="playerServer" class="sr-only">Choose playback server</label>
+                <select id="playerServer" class="sr-only">
+                    <option value="vidy">Vidy.st</option>
+                    <option value="vidfast">VidFast</option>
+                    <option value="cinesrc">CineSRC</option>
+                    <option value="vidsrc">VidCore</option>
+                    <option value="embedmaster">EmbedMaster</option>
+                </select>
+                <div id="playerServerChoices" class="player-server-options" role="group" aria-label="Playback servers">
+                    <button type="button" class="server-choice" data-server="vidy" aria-pressed="true">
+                        <span class="server-choice-label">Vidy.st</span>
+                        <span class="server-choice-check" aria-hidden="true">✓</span>
+                    </button>
+                    <button type="button" class="server-choice" data-server="vidfast" aria-pressed="false">
+                        <span class="server-choice-label">VidFast</span>
+                        <span class="server-choice-check invisible" aria-hidden="true">✓</span>
+                    </button>
+                    <button type="button" class="server-choice" data-server="cinesrc" aria-pressed="false">
+                        <span class="server-choice-label">CineSRC</span>
+                        <span class="server-choice-check invisible" aria-hidden="true">✓</span>
+                    </button>
+                    <button type="button" class="server-choice" data-server="vidsrc" aria-pressed="false">
+                        <span class="server-choice-label">VidCore</span>
+                        <span class="server-choice-check invisible" aria-hidden="true">✓</span>
+                    </button>
+                    <button type="button" class="server-choice" data-server="embedmaster" aria-pressed="false">
+                        <span class="server-choice-label">EmbedMaster</span>
+                        <span class="server-choice-check invisible" aria-hidden="true">✓</span>
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="retryPlayerButton" type="button" class="rounded-lg border border-white/10 px-3 py-2 font-bold text-rose-200 hover:border-rose-400">Reload player</button>
+                    <button id="fullscreenPlayerButton" type="button" hidden class="hidden rounded-lg border border-white/10 px-3 py-2 font-bold text-cyan-200 hover:border-cyan-400">Full screen</button>
+                    <button id="reportIssueButton" type="button" class="rounded-lg border border-white/10 px-3 py-2 font-bold text-amber-200 hover:border-amber-400">Report issue</button>
+                    <a id="openVidCoreDirectly" class="hidden rounded-lg border border-white/10 px-3 py-2 font-bold text-sky-200 hover:border-sky-400" target="_blank" rel="noopener noreferrer">Open VidCore directly</a>
+                </div>
+            </div>
+            <div id="playerStatus" class="hidden px-4 pb-3 text-xs text-amber-200" role="status" aria-live="polite">
+                <span id="playerStatusText"></span>
+                <div id="playerRecoveryActions" class="mt-2 hidden flex-wrap gap-2">
+                    <button id="retryPlayerStatusButton" type="button" class="min-h-11 rounded-lg border border-white/15 px-3 font-bold hover:border-amber-300">Retry this player</button>
+                    <button id="nextPlayerButton" type="button" class="min-h-11 rounded-lg border border-white/15 px-3 font-bold hover:border-amber-300">Try next player</button>
+                </div>
+            </div>
+            <p class="px-4 pb-3 text-xs text-slate-500">When available, choose captions and audio language from the selected player’s controls.</p>
+            <p id="fullscreenPlayerStatus" hidden class="hidden px-4 pb-3 text-xs text-amber-200" role="status" aria-live="polite"></p>
+            <p id="vidCoreEmbedNotice" role="status" aria-live="polite" class="hidden px-4 pb-3 text-xs text-amber-200">VidCore may block embedded playback in a sandboxed browser. Use “Open VidCore directly” or choose another server.</p>
+        </div>
+
+        <!-- Series Selector Controls (Visible only for TV / Anime) -->
+        <div id="seriesControls" class="hidden glass-panel p-5 rounded-2xl space-y-3">
+            <div class="selector-heading">
+                <div>
+                    <h4>Episodes</h4>
+                    <p id="seasonTitle" class="selector-title">Season 1</p>
+                </div>
+                <div class="selector-current" aria-live="polite">
+                    <span>Now playing</span>
+                    <strong id="currentEpisodeLabel">Episode 1</strong>
+                </div>
+            </div>
+            <div class="season-selector-row">
+                <div id="seasonTabs" class="season-tabs" role="tablist" aria-label="Select season"></div>
+                <select id="seasonSelect" class="sr-only" onchange="onSeasonChange()" aria-label="Select season"></select>
+                <small id="episodeStatus" class="normal-case tracking-normal text-slate-500"></small>
+            </div>
+            <select id="episodeSelect" class="sr-only" onchange="updatePlayerSource()" aria-label="Select episode"></select>
+            <div id="episodeList" class="episode-list" role="group" aria-label="Episodes"></div>
+            <p id="episodeInfo" class="sr-only" aria-live="polite">Choose an episode to start watching.</p>
+        </div>
+
+        <!-- Movie Details Card -->
+        <div id="watchTitlePanel" class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
+            <div class="watch-title-hero">
+                <img id="modalPoster" class="watch-title-poster" alt="" hidden>
+                <div class="watch-title-copy">
+                    <div class="watch-title-heading">
+                        <div>
+                            <div class="watch-title-wordmark">
+                                <img id="modalTitleLogo" class="watch-title-logo hidden" alt="" aria-hidden="true">
+                                <h1 id="modalTitle" class="text-2xl sm:text-4xl font-black text-white tracking-tight">Loading Title...</h1>
+                            </div>
+                            <div class="watch-title-meta">
+                                <span id="modalRating" class="text-xs font-black text-amber-400">⭐ 0.0</span>
+                                <span id="modalYear" class="text-xs font-bold text-slate-400">2026</span>
+                                <span id="titleSeasons" class="text-xs font-bold text-slate-400"></span>
+                                <span id="titleStatus" class="text-xs font-bold text-slate-400"></span>
+                            </div>
+                            <span id="modalTypeBadge" class="watch-type-badge">Movie</span>
+                            <div class="flex flex-wrap gap-2 pt-2" id="modalGenres"></div>
+                        </div>
+                        <div class="watch-title-actions">
+                            <button id="watchNowButton" type="button" class="action-btn primary" disabled aria-current="page">Playing Now</button>
+                            <button id="watchlistButton" type="button" class="action-btn secondary">+ My List</button>
+                            <button id="shareTitleButton" type="button" class="action-btn secondary">Share</button>
+                        </div>
+                    </div>
+                    <p id="shareTitleStatus" role="status" aria-live="polite" class="text-xs text-slate-400"></p>
+                    <div class="watch-overview">
+                        <p id="modalDesc" class="text-slate-300 text-sm leading-relaxed font-normal"></p>
+                        <button id="overviewToggle" type="button" aria-expanded="false">Show more</button>
+                        <section id="watchTrailerSection" class="hidden glass-panel rounded-2xl p-5" aria-labelledby="watchTrailerHeading">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div><h2 id="watchTrailerHeading" class="text-xs font-black uppercase tracking-wider text-rose-200">Trailer preview</h2><p id="watchTrailerName" class="mt-1 text-[10px] text-slate-500"></p></div>
+                                <button id="playTrailerButton" type="button" class="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs font-extrabold text-white hover:border-rose-400">▶ Play trailer</button>
+                            </div>
+                            <div id="watchTrailerPlayer" class="mt-3"></div>
+                        </section>
+                    </div>
+                    <div class="watch-cast space-y-3 pt-2">
+                        <h3 class="text-xs font-black uppercase tracking-wider text-slate-400">Cast</h3>
+                        <div id="modalCastGrid" class="flex gap-4 overflow-x-auto pb-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="metric-card">
+                    <span>Runtime</span>
+                    <strong id="modalRuntime">N/A</strong>
+                </div>
+                <div class="metric-card">
+                    <span>Status</span>
+                    <strong id="modalStatus">N/A</strong>
+                </div>
+                <div class="metric-card">
+                    <span>Language</span>
+                    <strong id="modalLanguage">N/A</strong>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-6 text-center text-xs text-slate-500 border-t border-slate-800/80 mt-auto">
+        Nitpliks Stream Hub • 2026
+    </footer>
+
+    <!-- Script -->
+    <script>
+        const TMDB_API_KEY = "295a780c3e5aae731d6f2e804c6d13e5";
+        const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+        const TMDB_IMG_URL = "https://image.tmdb.org/t/p/w500";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const mediaId = urlParams.get('id');
+        const mediaType = urlParams.get('type') || 'movie';
+        let isAnime = urlParams.get('anime') === '1';
+        const PLAYER_SERVER_STORAGE_KEY = 'clique_player_server';
+        const PLAYER_SERVER_VERSION_KEY = 'clique_player_server_version';
+        const CONTINUE_WATCHING_KEY = 'clique_continue_watching';
+        const PLAYER_START_TIMEOUT_MS = 20000;
+        const supportedServers = ['vidy', 'vidfast', 'cinesrc', 'vidsrc', 'embedmaster'];
+        const VIDFAST_ORIGINS = new Set([
+            'https://vidfast.pro',
+            'https://vidfast.in',
+            'https://vidfast.io',
+            'https://vidfast.me',
+            'https://vidfast.net',
+            'https://vidfast.pm',
+            'https://vidfast.xyz',
+            'https://vidfast.vc',
+            'https://vidfast.bz'
+        ]);
+        let vidfastPlayingState = false;
+        const isSmartTv = /SmartTV|Tizen|Web0S|NetCast|Viera|BRAVIA|HbbTV|GoogleTV|Google TV|Android[^)]*\bTV\b|TCL[^)]*\bTV\b/i.test(navigator.userAgent)
+            || (/Android/i.test(navigator.userAgent)
+                && Math.max(window.screen.width, window.screen.height) >= 1200
+                && Math.min(window.screen.width, window.screen.height) >= 650
+                && navigator.maxTouchPoints === 0)
+            || window.matchMedia('(hover: none) and (min-width: 900px)').matches;
+        const isTouchDevice = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
+        const isTouchTablet = isTouchDevice && window.matchMedia('(min-width: 700px)').matches;
+        const requestedSeason = Math.max(1, Number(urlParams.get('season')) || 1);
+        const requestedEpisode = Math.max(1, Number(urlParams.get('episode')) || 1);
+        const requestedStartAt = Math.max(0, Number(urlParams.get('startAt')) || 0);
+        let currentMediaDetails = null;
+        let seasonRequestId = 0;
+        let playerStartTimeout = null;
+
+        function syncPlayerServerChoices(serverValue) {
+            document.querySelectorAll('#playerServerChoices [data-server]').forEach(button => {
+                const isSelected = button.dataset.server === serverValue;
+                button.setAttribute('aria-pressed', String(isSelected));
+                button.querySelector('.server-choice-check').classList.toggle('invisible', !isSelected);
+            });
+        }
+
+        function getSelectedPlayerServer() {
+            let server = localStorage.getItem(PLAYER_SERVER_STORAGE_KEY);
+            const version = localStorage.getItem(PLAYER_SERVER_VERSION_KEY);
+            if (version !== '3' && version !== '4') {
+                if (!server || server === 'vidfast' || server === 'vidking') server = 'vidy';
+            }
+            if (server === 'videasy' || server === 'videasy-ws') server = 'vidy';
+            localStorage.setItem(PLAYER_SERVER_VERSION_KEY, '4');
+            const selectedServer = supportedServers.includes(server) ? server : 'vidy';
+            if (server !== selectedServer) {
+                localStorage.setItem(PLAYER_SERVER_STORAGE_KEY, selectedServer);
+            }
+            return selectedServer;
+        }
+
+        function formatRating(value) {
+            const num = Number(value);
+            return (!Number.isFinite(num) || num <= 0) ? 'N/A' : num.toFixed(1);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const preferences = JSON.parse(localStorage.getItem('clique_accessibility') || '{}');
+                document.body.classList.toggle('accessibility-mode', Boolean(preferences.contrast));
+                document.body.classList.toggle('high-contrast', Boolean(preferences.highContrast));
+                document.body.classList.toggle('large-text', Boolean(preferences.largeText));
+                document.body.classList.toggle('reduce-motion', Boolean(preferences.motion));
+            } catch (error) {
+                console.error('Unable to read accessibility preferences:', error);
+            }
+            if (!mediaId) {
+                window.location.href = 'index.html';
+                return;
+            }
+            if (!await checkPlaybackAccess()) return;
+            window.setInterval(checkPlaybackAccess, 15000);
+            const playerServer = document.getElementById('playerServer');
+            playerServer.value = getSelectedPlayerServer();
+            syncPlayerServerChoices(playerServer.value);
+            const fullscreenButton = document.getElementById('fullscreenPlayerButton');
+            const showFullscreenButton = isSmartTv || isTouchDevice;
+            fullscreenButton.hidden = !showFullscreenButton;
+            fullscreenButton.classList.toggle('hidden', !showFullscreenButton);
+            fullscreenButton.addEventListener('click', togglePlayerFullscreen);
+            document.addEventListener('fullscreenchange', syncPlayerFullscreenButton);
+            document.addEventListener('webkitfullscreenchange', syncPlayerFullscreenButton);
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Escape') return;
+                const playerShell = document.querySelector('.player-shell.is-player-fullscreen-fallback');
+                if (!playerShell) return;
+                playerShell.classList.remove('is-player-fullscreen-fallback');
+                document.body.classList.remove('player-fullscreen-fallback');
+                syncPlayerFullscreenButton();
+            });
+            const playerControls = document.getElementById('playerControls');
+            const videoBox = document.getElementById('videoBox');
+            const serverChoiceButtons = Array.from(document.querySelectorAll('#playerServerChoices [data-server]'));
+            if (isSmartTv || isTouchTablet) {
+                videoBox.parentNode.insertBefore(playerControls, videoBox);
+            }
+            if (isSmartTv) {
+                serverChoiceButtons.forEach((button, index) => {
+                    button.addEventListener('keydown', event => {
+                        if (event.keyCode === 23 && event.key !== 'Enter') {
+                            event.preventDefault();
+                            button.click();
+                            return;
+                        }
+                        const direction = event.key === 'ArrowLeft' || event.keyCode === 21 || event.keyCode === 37
+                            ? -1
+                            : event.key === 'ArrowRight' || event.keyCode === 22 || event.keyCode === 39
+                                ? 1
+                                : 0;
+                        const nextButton = serverChoiceButtons[index + direction];
+                        if (!direction || !nextButton) return;
+                        event.preventDefault();
+                        nextButton.focus();
+                        nextButton.scrollIntoView();
+                    });
+                });
+                if (document.activeElement === document.body) {
+                    serverChoiceButtons.find(button => button.dataset.server === playerServer.value)?.focus();
+                }
+            }
+            playerServer.addEventListener('change', () => {
+                syncPlayerServerChoices(playerServer.value);
+                localStorage.setItem(PLAYER_SERVER_STORAGE_KEY, playerServer.value);
+                updatePlayerSource();
+            });
+            serverChoiceButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (playerServer.value === button.dataset.server) return;
+                    playerServer.value = button.dataset.server;
+                    playerServer.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+            document.getElementById('retryPlayerButton').addEventListener('click', updatePlayerSource);
+            document.getElementById('retryPlayerStatusButton').addEventListener('click', updatePlayerSource);
+            document.getElementById('nextPlayerButton').addEventListener('click', () => {
+                const currentIndex = supportedServers.indexOf(playerServer.value);
+                playerServer.value = supportedServers[(currentIndex + 1) % supportedServers.length];
+                playerServer.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            document.getElementById('retryMediaButton').addEventListener('click', () => {
+                loadMediaDetails();
+            });
+            document.getElementById('watchlistButton').addEventListener('click', toggleCurrentWatchlist);
+            document.getElementById('shareTitleButton').addEventListener('click', shareCurrentTitle);
+            document.getElementById('playTrailerButton').addEventListener('click', playWatchTrailer);
+            document.getElementById('overviewToggle').addEventListener('click', event => {
+                const button = event.currentTarget;
+                const expanded = button.getAttribute('aria-expanded') === 'true';
+                button.setAttribute('aria-expanded', String(!expanded));
+                button.textContent = expanded ? 'Show more' : 'Show less';
+                button.closest('.watch-overview').classList.toggle('is-expanded', !expanded);
+            });
+            document.getElementById('reportIssueButton').addEventListener('click', () => document.getElementById('reportPanel').classList.toggle('hidden'));
+            document.getElementById('closeReportButton').addEventListener('click', () => document.getElementById('reportPanel').classList.add('hidden'));
+            document.getElementById('saveReportButton').addEventListener('click', savePlaybackReport);
+            window.addEventListener('message', handlePlayerMessage);
+            loadMediaDetails();
+        });
+
+        async function checkPlaybackAccess() {
+            try {
+                const response = await fetch('visitor.php', {
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store'
+                });
+                if (response.ok) return true;
+                if (response.status === 403) {
+                    let result = {};
+                    try {
+                        result = await response.json();
+                    } catch (error) {
+                        console.error('Unable to read IP ban reason:', error);
+                    }
+                    showPlaybackBlocked(result.reason);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Unable to verify playback access:', error);
+            }
+            return true;
+        }
+
+        function showPlaybackBlocked(reason) {
+            const playerServer = document.getElementById('playerServer');
+            const videoBox = document.getElementById('videoBox');
+            if (!playerServer || !videoBox) return;
+            document.querySelectorAll('iframe, video').forEach(element => element.remove());
+            playerServer.disabled = true;
+            const blockedMessage = document.createElement('div');
+            blockedMessage.className = 'flex h-full min-h-[18rem] flex-col items-center justify-center gap-3 p-6 text-center';
+            const heading = document.createElement('strong');
+            heading.className = 'text-lg font-black text-rose-300';
+            heading.textContent = 'Playback blocked';
+            const description = document.createElement('p');
+            description.className = 'max-w-md text-xs text-slate-400';
+            description.textContent = 'This IP address is blocked from watching movies and series on Nitpliks.';
+            const reasonLabel = document.createElement('strong');
+            reasonLabel.className = 'text-xs font-bold text-rose-200';
+            reasonLabel.textContent = 'Reason';
+            const reasonText = document.createElement('p');
+            reasonText.className = 'max-w-md text-xs text-slate-300';
+            reasonText.textContent = reason || 'No reason was provided.';
+            blockedMessage.append(heading, description, reasonLabel, reasonText);
+            videoBox.replaceChildren(blockedMessage);
+            document.querySelectorAll('button, select').forEach(element => {
+                if (element.id !== 'playerServer') element.disabled = true;
+            });
+        }
+
+        async function fetchTMDB(endpoint) {
+            try {
+                const res = await fetch(`${TMDB_BASE_URL}${endpoint}?api_key=${TMDB_API_KEY}`);
+                if (!res.ok) {
+                    console.error(`Title information request failed (${res.status}): ${endpoint}`);
+                    return null;
+                }
+                return await res.json();
+            } catch (error) {
+                console.error(`Title information request failed: ${endpoint}`, error);
+                return null;
+            }
+        }
+
+        async function fetchTitleLogo() {
+            const mediaKey = mediaType === 'tv' ? 'tv' : 'movie';
+            const imageData = await fetchTMDB(`/${mediaKey}/${mediaId}/images`);
+            const logos = Array.isArray(imageData?.logos) ? imageData.logos : [];
+            if (!logos.length) return null;
+            const preferredLogo = logos.find(item => item.iso_639_1 === 'en')
+                || logos.find(item => item.iso_639_1)
+                || logos[0];
+            return preferredLogo?.file_path ? preferredLogo : null;
+        }
+
+        async function loadMediaDetails() {
+            const [details, credits, videos, titleLogo] = await Promise.all([
+                fetchTMDB(`/${mediaType}/${mediaId}`),
+                fetchTMDB(`/${mediaType}/${mediaId}/credits`),
+                fetchTMDB(`/${mediaType}/${mediaId}/videos`),
+                fetchTitleLogo()
+            ]);
+
+            if (!details) {
+                document.getElementById('modalTitle').textContent = "Media not found.";
+                document.getElementById('mediaErrorText').textContent = 'Could not load this title. Check your connection and ';
+                document.getElementById('mediaError').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('mediaError').classList.add('hidden');
+            if (isAnime && (mediaType !== 'tv' || !details.genres?.some(genre => Number(genre.id) === 16))) {
+                isAnime = false;
+            }
+            currentMediaDetails = details;
+            const title = details.title || details.name || "Untitled";
+            setupWatchTrailer(videos?.results || [], title);
+            document.getElementById('navTitle').textContent = title;
+            const titleText = document.getElementById('modalTitle');
+            const titleLogoImage = document.getElementById('modalTitleLogo');
+            const logoUrl = titleLogo?.file_path ? `https://image.tmdb.org/t/p/original${titleLogo.file_path}` : '';
+            titleText.textContent = title;
+            if (logoUrl) {
+                titleLogoImage.src = logoUrl;
+                titleLogoImage.alt = `${title} logo`;
+                titleLogoImage.hidden = false;
+                titleLogoImage.classList.remove('hidden');
+                titleText.hidden = true;
+                titleText.setAttribute('aria-hidden', 'true');
+            } else {
+                titleLogoImage.removeAttribute('src');
+                titleLogoImage.hidden = true;
+                titleLogoImage.classList.add('hidden');
+                titleText.hidden = false;
+                titleText.setAttribute('aria-hidden', 'false');
+            }
+            const poster = document.getElementById('modalPoster');
+            if (details.poster_path) {
+                poster.src = `https://image.tmdb.org/t/p/w342${details.poster_path}`;
+                poster.alt = `${title} poster`;
+                poster.hidden = false;
+            } else {
+                poster.removeAttribute('src');
+                poster.alt = '';
+                poster.hidden = true;
+            }
+            const panelBackdrop = details.poster_path
+                ? `https://image.tmdb.org/t/p/w780${details.poster_path}`
+                : (details.backdrop_path ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}` : '');
+            if (panelBackdrop) {
+                document.getElementById('watchTitlePanel').style.setProperty(
+                    '--title-backdrop',
+                    `url("${panelBackdrop}")`
+                );
+            } else {
+                document.getElementById('watchTitlePanel').style.removeProperty('--title-backdrop');
+            }
+            document.getElementById('titleSeasons').textContent = details.number_of_seasons
+                ? `${details.number_of_seasons} Season${details.number_of_seasons === 1 ? '' : 's'}`
+                : '';
+            document.getElementById('titleStatus').textContent = details.status || '';
+            rememberMediaOpened(title, details);
+            document.getElementById('modalDesc').textContent = details.overview || "No description available.";
+            document.getElementById('overviewToggle').hidden = (details.overview || '').length < 220;
+            document.getElementById('modalYear').textContent = (details.release_date || details.first_air_date || '2026').substring(0, 4);
+            document.getElementById('modalRating').textContent = `⭐ ${formatRating(details.vote_average)}`;
+            document.getElementById('modalTypeBadge').textContent = isAnime ? 'Anime' : mediaType;
+            document.getElementById('modalRuntime').textContent = details.runtime ? `${details.runtime} min` : (details.episode_run_time?.[0] ? `${details.episode_run_time[0]} min` : 'N/A');
+            document.getElementById('modalStatus').textContent = details.status || 'N/A';
+            document.getElementById('modalLanguage').textContent = details.original_language ? details.original_language.toUpperCase() : 'N/A';
+            updateWatchlistButton();
+
+            document.getElementById('modalGenres').innerHTML = details.genres ? details.genres.map(g => `<span class="px-3 py-1 bg-slate-900 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300">${g.name}</span>`).join('') : '';
+
+            document.getElementById('modalCastGrid').innerHTML = credits?.cast?.length ? credits.cast.slice(0, 10).map(actor => `
+                <div class="flex-shrink-0 w-24 text-center">
+                    <img src="${actor.profile_path ? TMDB_IMG_URL + actor.profile_path : 'https://placehold.co/100x150/111827/ffffff?text=No+Img'}" class="w-24 h-32 object-cover rounded-xl mb-1.5 shadow" alt="${actor.name}">
+                    <h5 class="text-xs font-bold text-white truncate">${actor.name}</h5>
+                    <p class="text-[9px] text-slate-400 truncate">${actor.character || ''}</p>
+                </div>
+            `).join('') : '<div class="text-xs text-slate-500">No cast info available.</div>';
+
+            if (isAnime || mediaType === 'tv') {
+                document.body.classList.add('is-series');
+                document.getElementById('seriesControls').classList.remove('hidden');
+                populateSeasons(details.seasons || [{ season_number: 1 }]);
+            } else {
+                loadMoviePlayer();
+            }
+        }
+
+        function populateSeasons(seasons) {
+            const sSelect = document.getElementById('seasonSelect');
+            const valid = seasons.filter(s => s.season_number > 0);
+            sSelect.innerHTML = valid.length ? valid.map(s => `<option value="${s.season_number}">Season ${s.season_number}</option>`).join('') : '<option value="1">Season 1</option>';
+            sSelect.value = String(valid.some(season => season.season_number === requestedSeason) ? requestedSeason : (valid[0]?.season_number || 1));
+            document.getElementById('seasonTitle').textContent = `Season ${sSelect.value}`;
+            const tabs = document.getElementById('seasonTabs');
+            tabs.replaceChildren(...valid.map(season => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'season-tab';
+                button.dataset.season = String(season.season_number);
+                button.setAttribute('role', 'tab');
+                button.setAttribute('aria-selected', String(Number(sSelect.value) === season.season_number));
+                const name = document.createElement('span');
+                name.className = 'block text-[10px] font-black uppercase tracking-wider';
+                name.textContent = `Season ${season.season_number}`;
+                const count = document.createElement('span');
+                count.className = 'mt-1 block text-[9px] text-slate-500';
+                count.textContent = `${season.episode_count || '?'} episodes`;
+                button.append(name, count);
+                button.addEventListener('click', () => {
+                    sSelect.value = String(season.season_number);
+                    tabs.querySelectorAll('.season-tab').forEach(tab => tab.setAttribute('aria-selected', String(tab === button)));
+                    onSeasonChange();
+                });
+                return button;
+            }));
+            onSeasonChange();
+        }
+
+        async function onSeasonChange() {
+            const requestId = ++seasonRequestId;
+            const sNum = document.getElementById('seasonSelect').value || 1;
+            document.getElementById('seasonTitle').textContent = `Season ${sNum}`;
+            document.querySelectorAll('#seasonTabs .season-tab').forEach(tab => {
+                tab.setAttribute('aria-selected', String(tab.dataset.season === String(sNum)));
+            });
+            const eSelect = document.getElementById('episodeSelect');
+            const d = await fetchTMDB(`/tv/${mediaId}/season/${sNum}`);
+            if (requestId !== seasonRequestId) return;
+            if (!d?.episodes?.length) {
+                document.getElementById('mediaErrorText').textContent = 'Could not load episode information. Check your connection and ';
+                document.getElementById('mediaError').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('mediaError').classList.add('hidden');
+            const episodes = d.episodes;
+            const episodeNumbers = episodes.map(episode => episode.episode_number);
+            eSelect.innerHTML = episodes.map(episode => `<option value="${episode.episode_number}">Episode ${episode.episode_number}</option>`).join('');
+            const preferredEpisode = Number(sNum) === requestedSeason ? requestedEpisode : 0;
+            eSelect.value = String(episodeNumbers.includes(preferredEpisode) ? preferredEpisode : episodeNumbers[0]);
+            const episodeList = document.getElementById('episodeList');
+            const episodeInfo = document.getElementById('episodeInfo');
+            document.getElementById('episodeStatus').textContent = `${episodes.length} episode${episodes.length === 1 ? '' : 's'}`;
+            const renderEpisode = () => {
+                const selected = episodes.find(episode => String(episode.episode_number) === eSelect.value) || episodes[0];
+                if (!selected) return;
+                eSelect.value = String(selected.episode_number);
+                episodeInfo.textContent = selected.overview || `${selected.name || 'Episode'} · ${selected.air_date || 'Release date unavailable'}`;
+                document.getElementById('currentEpisodeLabel').textContent =
+                    `E${selected.episode_number} — ${selected.name || `Episode ${selected.episode_number}`}`;
+                episodeList.querySelectorAll('.episode-card').forEach(card => card.setAttribute('aria-current', String(card.dataset.episode === String(selected.episode_number))));
+                window.NitpliksMedia?.isEpisodeWatched(mediaId, sNum, selected.episode_number);
+            };
+            episodeList.replaceChildren(...episodes.map(episode => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'episode-card';
+                button.dataset.episode = String(episode.episode_number);
+                button.setAttribute('aria-current', 'false');
+                button.setAttribute('aria-label', `Episode ${episode.episode_number}: ${episode.name || 'Untitled episode'}`);
+                const artwork = document.createElement('span');
+                artwork.className = 'episode-art';
+                if (episode.still_path) {
+                    const image = document.createElement('img');
+                    image.src = `https://image.tmdb.org/t/p/w780${episode.still_path}`;
+                    image.alt = '';
+                    image.loading = 'lazy';
+                    artwork.append(image);
+                }
+                const number = document.createElement('span');
+                number.className = 'episode-number';
+                number.textContent = `E${episode.episode_number}`;
+                artwork.append(number);
+                if (Number(episode.vote_average) > 0) {
+                    const rating = document.createElement('span');
+                    rating.className = 'episode-rating';
+                    rating.textContent = `★ ${Number(episode.vote_average).toFixed(1)}`;
+                    artwork.append(rating);
+                }
+                const current = document.createElement('span');
+                current.className = 'episode-current-label';
+                current.textContent = 'Now playing';
+                artwork.append(current);
+                const details = document.createElement('span');
+                details.className = 'episode-details';
+                const title = document.createElement('span');
+                title.className = 'episode-title';
+                title.textContent = `E${episode.episode_number} · ${episode.name || 'Untitled episode'}`;
+                const overview = document.createElement('span');
+                overview.className = 'episode-overview';
+                overview.textContent = episode.overview || episode.air_date || 'Episode details unavailable.';
+                details.append(title, overview);
+                button.append(artwork, details);
+                button.addEventListener('click', () => {
+                    eSelect.value = String(episode.episode_number);
+                    renderEpisode();
+                    updatePlayerSource();
+                });
+                return button;
+            }));
+            eSelect.onchange = () => {
+                renderEpisode();
+                updatePlayerSource();
+            };
+            renderEpisode();
+            updatePlayerSource();
+        }
+
+        function loadMoviePlayer() {
+            setPlayerSource();
+        }
+
+        function updatePlayerSource() {
+            setPlayerSource();
+        }
+
+        function setPlayerStatus(message, showRecovery = false) {
+            const status = document.getElementById('playerStatus');
+            const actions = document.getElementById('playerRecoveryActions');
+            document.getElementById('playerStatusText').textContent = message;
+            status.classList.remove('hidden');
+            actions.classList.toggle('hidden', !showRecovery);
+            actions.classList.toggle('flex', showRecovery);
+        }
+
+        function confirmPlayerStarted() {
+            clearTimeout(playerStartTimeout);
+            const status = document.getElementById('playerStatus');
+            const actions = document.getElementById('playerRecoveryActions');
+            status.classList.add('hidden');
+            actions.classList.add('hidden');
+        }
+
+        function setPlayerSource() {
+            clearTimeout(playerStartTimeout);
+            setPlayerStatus('Loading the selected player…');
+            const playerServer = document.getElementById('playerServer')?.value || getSelectedPlayerServer();
+            const directVidCoreLink = document.getElementById('openVidCoreDirectly');
+            const vidCoreEmbedNotice = document.getElementById('vidCoreEmbedNotice');
+            directVidCoreLink.classList.add('hidden');
+            vidCoreEmbedNotice.classList.add('hidden');
+            const safeMediaId = encodeURIComponent(mediaId);
+            const isTv = isAnime || mediaType === 'tv';
+            const sNum = document.getElementById('seasonSelect')?.value || 1;
+            const eNum = document.getElementById('episodeSelect')?.value || 1;
+            const isResumeTarget = !(isAnime || mediaType === 'tv') ||
+                (Number(sNum) === requestedSeason && Number(eNum) === requestedEpisode);
+            let playerUrl;
+
+            if (playerServer === 'vidsrc') {
+                playerUrl = isTv
+                    ? `https://vidcore.org/embed/tv/${safeMediaId}/${sNum}/${eNum}`
+                    : `https://vidcore.org/embed/movie/${safeMediaId}`;
+            } else if (playerServer === 'vidy') {
+                const vidyUrl = new URL(isTv
+                    ? `https://vidy.st/tv/${safeMediaId}/${sNum}/${eNum}`
+                    : `https://vidy.st/movie/${safeMediaId}`);
+                vidyUrl.searchParams.set('color', 'DC2626');
+                vidyUrl.searchParams.set('autoplay', 'true');
+                if (isTv) {
+                    vidyUrl.searchParams.set('nextEpisode', 'true');
+                    vidyUrl.searchParams.set('episodeSelector', 'true');
+                    vidyUrl.searchParams.set('autoplayNextEpisode', 'true');
+                }
+                playerUrl = vidyUrl.href;
+            } else if (playerServer === 'cinesrc') {
+                const url = new URL(isTv
+                    ? `https://cinesrc.st/embed/tv/${safeMediaId}`
+                    : `https://cinesrc.st/embed/movie/${safeMediaId}`);
+                if (isTv) {
+                    url.searchParams.set('s', sNum);
+                    url.searchParams.set('e', eNum);
+                }
+                playerUrl = url.href;
+            } else if (playerServer === 'embedmaster') {
+                playerUrl = isTv
+                    ? `https://embedmaster.link/tv/${safeMediaId}/${sNum}/${eNum}`
+                    : `https://embedmaster.link/movie/${safeMediaId}`;
+            } else {
+                playerUrl = isTv
+                    ? `https://vidfast.vc/tv/${safeMediaId}/${sNum}/${eNum}${isSmartTv ? '' : '?autoPlay=true'}`
+                    : `https://vidfast.vc/movie/${safeMediaId}${isSmartTv ? '' : '?autoPlay=true'}`;
+            }
+
+            if (playerServer !== 'vidsrc' && playerServer !== 'cinesrc' && playerServer !== 'embedmaster' && playerServer !== 'vidy' && requestedStartAt > 0 && isResumeTarget) {
+                playerUrl += `${playerUrl.includes('?') ? '&' : '?'}startAt=${Math.floor(requestedStartAt)}`;
+            }
+            const playerAllow = playerServer === 'vidy'
+                ? 'encrypted-media; autoplay *; fullscreen *'
+                : playerServer === 'embedmaster'
+                    ? 'autoplay *; fullscreen *; picture-in-picture *; encrypted-media *'
+                    : 'autoplay; fullscreen *; encrypted-media';
+            if (playerServer === 'vidsrc') {
+                directVidCoreLink.href = playerUrl;
+                directVidCoreLink.classList.remove('hidden');
+                vidCoreEmbedNotice.classList.remove('hidden');
+            }
+            const videoBox = document.getElementById('videoBox');
+            videoBox.innerHTML = `
+                <iframe src="${playerUrl}" title="Video player" frameborder="0" loading="eager" allowfullscreen webkitallowfullscreen mozallowfullscreen allow="${playerAllow}" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+            `;
+            playerStartTimeout = window.setTimeout(() => {
+                setPlayerStatus('Playback has not been confirmed yet. The selected player may be slow or may not support embedding here. Retry it or try another player.', true);
+            }, PLAYER_START_TIMEOUT_MS);
+        }
+
+        async function togglePlayerFullscreen() {
+            const videoBox = document.getElementById('videoBox');
+            const playerShell = videoBox.parentElement;
+            const frame = videoBox.querySelector('iframe');
+            const status = document.getElementById('fullscreenPlayerStatus');
+            const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+            try {
+                if (playerShell.classList.contains('is-player-fullscreen-fallback')) {
+                    playerShell.classList.remove('is-player-fullscreen-fallback');
+                    document.body.classList.remove('player-fullscreen-fallback');
+                    syncPlayerFullscreenButton();
+                    return;
+                }
+                if (fullscreenElement) {
+                    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+                    if (!exitFullscreen) throw new Error('Fullscreen exit is not supported by this browser.');
+                    await exitFullscreen.call(document);
+                    syncPlayerFullscreenButton();
+                    return;
+                }
+                if (!frame) {
+                    status.textContent = 'Wait for the video player to load before entering full screen.';
+                    status.hidden = false;
+                    status.classList.remove('hidden');
+                    return;
+                }
+                const fullscreenTargets = [
+                    { element: videoBox, request: videoBox.requestFullscreen || videoBox.webkitRequestFullscreen },
+                    { element: frame, request: frame.requestFullscreen || frame.webkitRequestFullscreen }
+                ];
+                let enteredFullscreen = false;
+                let fullscreenError;
+                for (const target of fullscreenTargets) {
+                    if (!target.request) continue;
+                    try {
+                        await target.request.call(target.element);
+                        enteredFullscreen = true;
+                        break;
+                    } catch (error) {
+                        fullscreenError = error;
+                        console.warn('Player fullscreen request failed; trying the next option.', error);
+                    }
+                }
+                if (!enteredFullscreen) {
+                    if (!isTouchDevice) {
+                        throw fullscreenError || new Error('Fullscreen is not supported by this browser.');
+                    }
+                    playerShell.classList.add('is-player-fullscreen-fallback');
+                    document.body.classList.add('player-fullscreen-fallback');
+                }
+                status.hidden = true;
+                status.classList.add('hidden');
+                syncPlayerFullscreenButton();
+            } catch (error) {
+                console.error('Unable to enter player full screen:', error);
+                status.textContent = 'Full screen is unavailable in this browser for this server.';
+                status.hidden = false;
+                status.classList.remove('hidden');
+            }
+        }
+
+        function syncPlayerFullscreenButton() {
+            const button = document.getElementById('fullscreenPlayerButton');
+            const playerShell = document.querySelector('.player-shell');
+            const isFullscreen = Boolean(
+                document.fullscreenElement
+                || document.webkitFullscreenElement
+                || playerShell?.classList.contains('is-player-fullscreen-fallback')
+            );
+            button.textContent = isFullscreen ? 'Exit full screen' : 'Full screen';
+            button.setAttribute('aria-label', isFullscreen ? 'Exit full screen' : 'Enter full screen');
+        }
+
+        function handlePlayerMessage(event) {
+            const frame = document.querySelector('#videoBox iframe');
+            const selectedServer = document.getElementById('playerServer').value;
+            const allowedOrigins = selectedServer === 'vidfast' ? null
+                : selectedServer === 'vidy' ? ['https://vidy.st', 'https://www.vidy.st']
+                : selectedServer === 'vidsrc' ? ['https://vidcore.org']
+                : selectedServer === 'cinesrc' ? ['https://cinesrc.st']
+                : selectedServer === 'embedmaster' ? ['https://embedmaster.link', 'https://embdmstrplayer.com']
+                : [];
+            const originAllowed = selectedServer === 'vidfast'
+                ? VIDFAST_ORIGINS.has(event.origin)
+                : allowedOrigins.includes(event.origin);
+            if (!frame || event.source !== frame.contentWindow || !originAllowed) return;
+            const message = event.data;
+            if (!message || message.type !== 'PLAYER_EVENT' || !message.data || typeof message.data !== 'object') return;
+
+            if (selectedServer === 'vidfast') {
+                handleVidfastPlayerEvent(message.data);
+                return;
+            }
+
+            const payload = message.data;
+            const playerInfo = payload.player_info || {};
+            if (String(playerInfo.tmdb || playerInfo.imdb || '') !== String(mediaId)) return;
+            if (!['playing', 'paused', 'seeked', 'completed'].includes(payload.player_status)) return;
+            if (payload.player_status === 'playing') confirmPlayerStarted();
+            const position = Number(payload.player_progress);
+            const duration = Number(payload.player_duration);
+            if (!Number.isFinite(position) || position < 0 || !Number.isFinite(duration) || duration <= 0) return;
+            saveContinueWatching({
+                position,
+                duration,
+                season: Math.max(1, Number(playerInfo.season) || Number(document.getElementById('seasonSelect')?.value) || 1),
+                episode: Math.max(1, Number(playerInfo.episode) || Number(document.getElementById('episodeSelect')?.value) || 1),
+                status: payload.player_status
+            });
+            window.NitpliksMedia?.handlePlaybackEvent(payload);
+        }
+
+        function handleVidfastPlayerEvent(payload) {
+            const eventName = String(payload.event || '').toLowerCase();
+            const position = Number(payload.currentTime ?? payload.player_progress);
+            const duration = Number(payload.duration ?? payload.player_duration);
+
+            if (eventName === 'play' || eventName === 'playing') {
+                vidfastPlayingState = true;
+            } else if (eventName === 'pause' || eventName === 'paused' || eventName === 'completed') {
+                vidfastPlayingState = false;
+            } else if (typeof payload.playing === 'boolean') {
+                vidfastPlayingState = payload.playing;
+            } else if (typeof payload.isPlaying === 'boolean') {
+                vidfastPlayingState = payload.isPlaying;
+            } else if (typeof payload.paused === 'boolean') {
+                vidfastPlayingState = !payload.paused;
+            } else {
+                const playerStatus = String(payload.status || payload.playerStatus || '').toLowerCase();
+                if (playerStatus === 'playing' || playerStatus === 'play') vidfastPlayingState = true;
+                if (playerStatus === 'paused' || playerStatus === 'pause' || playerStatus === 'ended') vidfastPlayingState = false;
+            }
+
+            if (vidfastPlayingState) confirmPlayerStarted();
+            if (!Number.isFinite(position) || position < 0) return;
+
+            if (Number.isFinite(duration) && duration > 0) {
+                saveContinueWatching({
+                    position,
+                    duration,
+                    season: Math.max(1, Number(payload.season) || Number(document.getElementById('seasonSelect')?.value) || 1),
+                    episode: Math.max(1, Number(payload.episode) || Number(document.getElementById('episodeSelect')?.value) || 1),
+                    status: vidfastPlayingState ? 'playing' : 'paused'
+                });
+            }
+            window.NitpliksMedia?.handlePlaybackEvent({
+                ...payload,
+                player_status: vidfastPlayingState ? 'playing' : 'paused',
+                player_progress: position,
+                player_duration: Number.isFinite(duration) ? duration : 0
+            });
+        }
+
+        function saveContinueWatching(progress) {
+            const entries = readContinueWatching();
+            const contentType = mediaType === 'tv' || isAnime ? 'tv' : 'movie';
+            const key = `${contentType}:${mediaId}`;
+            const filtered = entries.filter(entry => `${entry.type === 'tv' ? 'tv' : 'movie'}:${entry.id}` !== key);
+            if (progress.status !== 'completed' && progress.position / progress.duration < 0.95) {
+                const title = currentMediaDetails?.title || currentMediaDetails?.name || 'Untitled';
+                filtered.unshift({
+                    id: String(mediaId),
+                    type: contentType,
+                    isAnime,
+                    title,
+                    image: currentMediaDetails?.poster_path
+                        ? `${TMDB_IMG_URL}${currentMediaDetails.poster_path}`
+                        : currentMediaDetails?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${currentMediaDetails.backdrop_path}` : '',
+                    genre_ids: (currentMediaDetails?.genres || []).map(genre => Number(genre.id)).filter(Number.isFinite),
+                    season: progress.season,
+                    episode: progress.episode,
+                    position: progress.position,
+                    duration: progress.duration,
+                    updatedAt: Date.now()
+                });
+            }
+            try {
+                localStorage.setItem(CONTINUE_WATCHING_KEY, JSON.stringify(filtered.slice(0, 30)));
+            } catch (error) {
+                console.error('Unable to save playback progress:', error);
+            }
+        }
+
+        function rememberMediaOpened(title, details) {
+            const entries = readContinueWatching();
+            const id = String(mediaId);
+            const existing = entries.find(entry => String(entry.id) === id && entry.type === (mediaType === 'tv' || isAnime ? 'tv' : 'movie'));
+            const filtered = entries.filter(entry => !(String(entry.id) === id && entry.type === (mediaType === 'tv' || isAnime ? 'tv' : 'movie')));
+            const image = details.poster_path
+                ? `${TMDB_IMG_URL}${details.poster_path}`
+                : details.backdrop_path ? `https://image.tmdb.org/t/p/w1280${details.backdrop_path}` : '';
+            filtered.unshift({
+                ...(existing || {}),
+                id,
+                type: mediaType === 'tv' || isAnime ? 'tv' : 'movie',
+                isAnime,
+                title,
+                image: image || existing?.image || '',
+                genre_ids: (details.genres || []).map(genre => Number(genre.id)).filter(Number.isFinite),
+                season: Number(document.getElementById('seasonSelect')?.value) || requestedSeason,
+                episode: Number(document.getElementById('episodeSelect')?.value) || requestedEpisode,
+                position: Number(existing?.position) || 0,
+                duration: Number(existing?.duration) || 0,
+                updatedAt: Date.now()
+            });
+            try {
+                localStorage.setItem(CONTINUE_WATCHING_KEY, JSON.stringify(filtered.slice(0, 30)));
+            } catch (error) {
+                console.error('Unable to record recently opened title:', error);
+            }
+        }
+
+        function readContinueWatching() {
+            try {
+                const entries = JSON.parse(localStorage.getItem(CONTINUE_WATCHING_KEY) || '[]');
+                return Array.isArray(entries) ? entries : [];
+            } catch (error) {
+                console.error('Unable to read playback progress:', error);
+                return [];
+            }
+        }
+
+        function readWatchlist() {
+            try {
+                const items = JSON.parse(localStorage.getItem('clique_watchlist') || '[]');
+                return Array.isArray(items) ? items : [];
+            } catch (error) {
+                console.error('Unable to read My List:', error);
+                return [];
+            }
+        }
+
+        function updateWatchlistButton() {
+            const button = document.getElementById('watchlistButton');
+            const inList = readWatchlist().some(item => String(item.id) === String(mediaId));
+            button.textContent = inList ? '✓ In My List' : '+ My List';
+            button.setAttribute('aria-pressed', String(inList));
+        }
+
+        function setupWatchTrailer(videos, title) {
+            const button = document.getElementById('playTrailerButton');
+            button.disabled = false;
+            button.textContent = '▶ Play trailer';
+            delete button.dataset.videoKey;
+            delete button.dataset.videoTitle;
+            const trailer = videos
+                .filter(video => video.site === 'YouTube' && video.type === 'Trailer' && /^[a-zA-Z0-9_-]{11}$/.test(video.key || ''))
+                .sort((a, b) => Number(Boolean(b.official)) - Number(Boolean(a.official)))[0];
+            const section = document.getElementById('watchTrailerSection');
+            const player = document.getElementById('watchTrailerPlayer');
+            player.replaceChildren();
+            if (!trailer) {
+                section.classList.add('hidden');
+                return;
+            }
+            section.classList.remove('hidden');
+            document.getElementById('watchTrailerName').textContent = trailer.name || `${title} trailer`;
+            button.dataset.videoKey = trailer.key;
+            button.dataset.videoTitle = trailer.name || `${title} trailer`;
+        }
+
+        function playWatchTrailer() {
+            const button = document.getElementById('playTrailerButton');
+            const key = button.dataset.videoKey;
+            if (!key || !/^[a-zA-Z0-9_-]{11}$/.test(key)) return;
+            const iframe = document.createElement('iframe');
+            iframe.className = 'aspect-video w-full rounded-xl border border-white/10';
+            iframe.src = `https://www.youtube-nocookie.com/embed/${key}?autoplay=1&rel=0&vq=hd1080`;
+            iframe.title = button.dataset.videoTitle || 'Trailer preview';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+            iframe.allowFullscreen = true;
+            document.getElementById('watchTrailerPlayer').replaceChildren(iframe);
+            button.disabled = true;
+            button.textContent = 'Trailer playing';
+        }
+
+        async function shareCurrentTitle() {
+            const title = currentMediaDetails?.title || currentMediaDetails?.name || 'Nitpliks';
+            const url = new URL(window.location.href);
+            const status = document.getElementById('shareTitleStatus');
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title, text: `Watch ${title}`, url: url.href });
+                    status.textContent = 'Share sheet opened.';
+                    return;
+                } catch (error) {
+                    if (error.name === 'AbortError') return;
+                    console.error('Unable to open the share sheet:', error);
+                }
+            }
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(url.href);
+                } else {
+                    const input = document.createElement('textarea');
+                    input.value = url.href;
+                    input.setAttribute('readonly', '');
+                    input.style.position = 'fixed';
+                    input.style.opacity = '0';
+                    document.body.append(input);
+                    input.select();
+                    const copied = document.execCommand('copy');
+                    input.remove();
+                    if (!copied) throw new Error('Clipboard copy was rejected');
+                }
+                status.textContent = location.protocol === 'file:'
+                    ? 'Link copied. Host the site to share a link that others can open.'
+                    : 'Link copied to clipboard.';
+            } catch (error) {
+                console.error('Unable to copy the title link:', error);
+                status.textContent = 'Could not copy the link. Copy it from the address bar instead.';
+            }
+        }
+
+        function toggleCurrentWatchlist() {
+            const items = readWatchlist();
+            const index = items.findIndex(item => String(item.id) === String(mediaId));
+            if (index >= 0) {
+                items.splice(index, 1);
+            } else {
+                items.push({
+                    id: String(mediaId),
+                    title: currentMediaDetails?.title || currentMediaDetails?.name || 'Untitled',
+                    image: currentMediaDetails?.poster_path ? `${TMDB_IMG_URL}${currentMediaDetails.poster_path}` : '',
+                    type: mediaType === 'tv' || isAnime ? 'tv' : 'movie',
+                    isAnime,
+                    genre_ids: (currentMediaDetails?.genres || []).map(genre => Number(genre.id)).filter(Number.isFinite)
+                });
+            }
+            localStorage.setItem('clique_watchlist', JSON.stringify(items));
+            updateWatchlistButton();
+        }
+
+        async function savePlaybackReport() {
+            const description = document.getElementById('issueDescription').value.trim();
+            if (!description) {
+                document.getElementById('reportStatus').textContent = 'Please describe the issue.';
+                return;
+            }
+            const report = {
+                title:currentMediaDetails?.title||currentMediaDetails?.name||'Unknown title',
+                mediaId:String(mediaId),
+                mediaType,
+                season:Number(document.getElementById('seasonSelect')?.value)||null,
+                episode:Number(document.getElementById('episodeSelect')?.value)||null,
+                server:document.getElementById('playerServer').value,
+                description,
+                createdAt:new Date().toISOString()
+            };
+            let savedReports;
+            try {
+                const reports=JSON.parse(localStorage.getItem('clique_playback_reports')||'[]');
+                const saved=Array.isArray(reports)?reports:[];
+                saved.unshift(report);
+                localStorage.setItem('clique_playback_reports',JSON.stringify(saved.slice(0,50)));
+                savedReports=true;
+            } catch(error) {
+                console.error('Unable to save playback report:',error);
+                document.getElementById('reportStatus').textContent='Could not save this report in browser storage.';
+                return;
+            }
+            if (savedReports) {
+                try {
+                    await navigator.clipboard.writeText(JSON.stringify(report,null,2));
+                    document.getElementById('reportStatus').textContent='Saved locally and copied. Paste it into your feedback message.';
+                } catch(error) {
+                    console.error('Unable to copy playback report:',error);
+                    document.getElementById('reportStatus').textContent='Saved locally. Clipboard access was unavailable.';
+                }
+            }
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js').catch(error => {
+                    console.error('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
+    <script src="visitor-log.js?v=2"></script>
+</body>
+</html>

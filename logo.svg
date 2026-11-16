@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-labelledby="title desc">
+  <title id="title">Nitpliks</title>
+  <desc id="desc">Nitpliks streaming logo with a lime portal and coral play mark</desc>
+  <defs>
+    <linearGradient id="lime" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#e8ff8a"/>
+      <stop offset="1" stop-color="#d7f45b"/>
+    </linearGradient>
+    <linearGradient id="coral" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ff9a7e"/>
+      <stop offset="1" stop-color="#ff735f"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(12 12)">
+    <rect width="136" height="136" rx="38" fill="#17171e" stroke="#f4f1e8" stroke-opacity=".18" stroke-width="4"/>
+    <path d="M37 37h30c18 0 32 14 32 32s-14 32-32 32H37V37Z" fill="none" stroke="url(#lime)" stroke-linecap="round" stroke-width="13"/>
+    <path d="m60 52 27 17-27 17V52Z" fill="url(#coral)"/>
+    <circle cx="37" cy="69" r="6" fill="#f4f1e8"/>
+  </g>
+  <text x="177" y="101" fill="#f4f1e8" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="800" letter-spacing="-5">NITPLIKS</text>
+  <circle cx="596" cy="38" r="8" fill="#d7f45b"/>
+</svg>

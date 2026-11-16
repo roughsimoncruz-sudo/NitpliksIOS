@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Collections - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+    <style>
+        .collections-page main {
+            padding-top: 2rem !important;
+        }
+        .collections-page .collections-hero {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 1.5rem;
+            padding: 2.25rem !important;
+            border: 1px solid rgba(148, 163, 184, .18) !important;
+            border-radius: 1.4rem !important;
+            background:
+                radial-gradient(circle at 88% 0, rgba(103, 232, 249, .14), transparent 18rem),
+                linear-gradient(135deg, rgba(15, 23, 42, .94), rgba(8, 15, 31, .9)) !important;
+            box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .24) !important;
+        }
+        .collections-page .collections-hero::after {
+            content: "";
+            position: absolute;
+            right: 7%;
+            bottom: -5rem;
+            width: 13rem;
+            height: 13rem;
+            border: 1px solid rgba(103, 232, 249, .18);
+            border-radius: 50%;
+            box-shadow: 0 0 0 1.5rem rgba(103, 232, 249, .035), 0 0 0 3rem rgba(103, 232, 249, .02);
+            pointer-events: none;
+        }
+        .collections-page .collections-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+        .collections-page .collections-hero h1 {
+            max-width: none;
+            font-size: clamp(2.8rem, 7vw, 5.4rem) !important;
+            line-height: .95;
+        }
+        .collections-page #newCollection {
+            flex: 0 0 auto;
+            border-radius: .8rem !important;
+            background: linear-gradient(135deg, #a5f3fc, #38bdf8) !important;
+            box-shadow: 0 .75rem 1.7rem rgba(34, 211, 238, .18);
+        }
+        .collections-page #newCollection:hover {
+            background: linear-gradient(135deg, #cffafe, #67e8f9) !important;
+        }
+        .collections-page #collections {
+            position: relative;
+            z-index: 1;
+        }
+        @media (max-width: 767px) {
+            .collections-page main {
+                padding-top: 1.25rem !important;
+            }
+            .collections-page .collections-hero {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 1.25rem;
+                padding: 1.25rem !important;
+                border-radius: 1rem !important;
+            }
+            .collections-page #newCollection {
+                width: 100%;
+            }
+        }
+    </style>
+    <script src="profile-storage.js"></script>
+</head>
+<body class="collections-page">
+    <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <a href="index.html" class="inline-flex min-h-10 items-center text-xs font-bold text-cyan-200">← Discover</a>
+        <header class="collections-hero mt-7 sm:mt-8"><div><p class="text-[10px] font-black uppercase tracking-[.3em] text-cyan-200">Organize your library</p><h1 class="mt-2 text-4xl font-black">My Collections</h1><p class="mt-3 max-w-md text-sm leading-6 text-slate-400">Group your saved stories into personal collections.</p></div><button id="newCollection" class="w-full rounded-lg bg-cyan-300 px-4 py-3 text-xs font-black uppercase text-slate-950 sm:w-auto">New collection</button></header>
+        <p id="status" class="mt-5 text-sm text-slate-400"></p>
+        <div id="collections" class="mt-5 grid gap-4 sm:grid-cols-2"></div>
+    </main>
+    <script>
+        const status = document.getElementById('status');
+        const storageKey = 'clique_collections';
+        function readCollections() {
+            try {
+                const value = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                return Array.isArray(value) ? value : [];
+            } catch (error) {
+                console.error('Unable to read profile collections:', error);
+                return [];
+            }
+        }
+        function load() {
+            const items = readCollections();
+            document.getElementById('collections').replaceChildren(...items.map(item => {
+                const card = document.createElement('article');
+                card.className = 'glass-panel rounded-2xl p-5';
+                const title = document.createElement('h2');
+                title.textContent = item.name;
+                title.className = 'text-lg font-extrabold';
+                const description = document.createElement('p');
+                description.textContent = item.description || 'No description';
+                description.className = 'mt-2 text-sm text-slate-400';
+                const count = document.createElement('p');
+                count.textContent = `${item.items?.length || 0} saved title${item.items?.length === 1 ? '' : 's'}`;
+                count.className = 'mt-4 text-xs font-bold text-cyan-200';
+                card.append(title, description, count);
+                return card;
+            }));
+            status.textContent = `${items.length} collection${items.length === 1 ? '' : 's'} for this profile`;
+        }
+        document.getElementById('newCollection').addEventListener('click', () => {
+            const name = prompt('Collection name');
+            if (!name || !name.trim()) return;
+            const items = readCollections();
+            items.push({ id: `collection-${Date.now()}`, name: name.trim().slice(0, 60), description: 'A personal collection', items: [], createdAt: Date.now() });
+            localStorage.setItem(storageKey, JSON.stringify(items));
+            load();
+        });
+        window.addEventListener('clique-profile-changed', load);
+        load();
+    </script>
+    <script src="visitor-log.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Nitpliks">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#080808">
+    <title>Release Calendar - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; }
+        body { min-height:100vh; background:linear-gradient(180deg,#080808,#111 45%,#080808); color:#f8fafc; }
+        :focus-visible { outline:2px solid #fb3348; outline-offset:3px; }
+        .release-card { background:#171717; border:1px solid rgba(255,255,255,.1); }
+    </style>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+    <script src="details-modal.js?v=2" defer></script>
+    <script src="sync.js"></script>
+</head>
+<body>
+    <nav class="sticky top-0 z-10 border-b border-white/10 bg-black/90 backdrop-blur-xl">
+        <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+            <a href="index.html" class="flex items-center gap-2.5 text-sm font-extrabold"><img class="site-logo" src="nitpliks-logo.png?v=40" width="160" height="53" alt="Nitpliks home"></a>
+            <div class="flex gap-4 text-xs font-bold text-slate-400"><a href="search-results.html" class="hover:text-white">Search</a><a href="my-list.html" class="hover:text-white">My List</a></div>
+        </div>
+    </nav>
+    <main class="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <header class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div><p class="mb-2 text-[10px] font-black uppercase tracking-[.3em] text-rose-300">Mark your calendar</p><h1 class="text-3xl font-black sm:text-5xl">Upcoming Releases</h1><p class="mt-2 text-sm text-slate-400">Browse announced movie and series release dates.</p></div>
+            <label class="grid gap-1 text-[10px] font-bold uppercase text-slate-400">Month
+                <select id="monthFilter" class="min-h-11 rounded-lg border border-white/10 bg-neutral-900 px-3 text-xs normal-case text-white"><option value="all">All upcoming</option></select>
+            </label>
+        </header>
+        <p id="status" role="status" aria-live="polite" class="mb-4 text-sm text-slate-400">Loading releases…</p>
+        <div id="releaseGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </main>
+    <script>
+        const API = 'tmdb.php';
+        const IMAGE = 'https://image.tmdb.org/t/p/w500';
+        let releases = [];
+
+        function escapeHTML(value) {
+            const node = document.createElement('span');
+            node.textContent = value || '';
+            return node.innerHTML;
+        }
+        function getSavedList() {
+            try {
+                const list = JSON.parse(localStorage.getItem('clique_watchlist') || '[]');
+                return Array.isArray(list) ? list : [];
+            } catch (error) {
+                console.error('Unable to read My List:',error);
+                return [];
+            }
+        }
+        async function fetchResults(path, params) {
+            params.set('path', path);
+            const response = await fetch(`${API}?${params}`, {credentials:'same-origin'});
+            if (!response.ok) throw new Error(`Release request failed (${response.status})`);
+            const data = await response.json();
+            return data.results || [];
+        }
+        function setupMonths() {
+            const select = document.getElementById('monthFilter');
+            const start = new Date();
+            for (let offset=0; offset<13; offset++) {
+                const date = new Date(start.getFullYear(),start.getMonth()+offset,1);
+                const value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+                select.add(new Option(date.toLocaleDateString(undefined,{month:'long',year:'numeric'}),value));
+            }
+            select.addEventListener('change',render);
+        }
+        function render() {
+            const month = document.getElementById('monthFilter').value;
+            const items = releases.filter(item => month === 'all' || item.date.startsWith(month));
+            const grid = document.getElementById('releaseGrid');
+            document.getElementById('status').textContent = items.length
+                ? `${items.length} upcoming ${items.length === 1 ? 'release' : 'releases'}`
+                : 'No announced releases for this month.';
+            grid.replaceChildren(...items.map(item => {
+                const card = document.createElement('article');
+                card.className = 'release-card flex gap-3 overflow-hidden rounded-xl p-3';
+                const image = document.createElement('img');
+                image.className = 'h-36 w-24 flex-shrink-0 rounded-lg bg-neutral-900 object-cover';
+                image.src = item.poster_path ? `${IMAGE}${item.poster_path}` : 'https://placehold.co/240x360/171717/ffffff?text=No+Poster';
+                image.alt = `${item.title} poster`;
+                image.loading = 'lazy';
+                const details = document.createElement('div');
+                details.className = 'flex min-w-0 flex-1 flex-col items-start';
+                const date = document.createElement('p');
+                date.className = 'text-[9px] font-black uppercase tracking-wide text-rose-300';
+                date.textContent = new Date(`${item.date}T12:00:00`).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+                const title = document.createElement('h2');
+                title.className = 'mt-2 line-clamp-2 text-sm font-extrabold';
+                title.textContent = item.title;
+                const type = document.createElement('p');
+                type.className = 'mt-1 text-[10px] uppercase text-slate-500';
+                type.textContent = item.type === 'tv' ? 'Series' : 'Movie';
+                const overview = document.createElement('p');
+                overview.className = 'mt-2 line-clamp-3 text-[10px] leading-relaxed text-slate-400';
+                overview.textContent = item.overview || 'Synopsis not available.';
+                const actions = document.createElement('div');
+                actions.className = 'mt-auto flex flex-wrap gap-2 pt-3';
+                const watch = document.createElement('a');
+                watch.className = 'rounded-lg bg-rose-700 px-3 py-2 text-[9px] font-extrabold uppercase hover:bg-rose-600';
+                watch.href = `index.html?details=${encodeURIComponent(item.id)}&type=${item.type}&anime=${item.genre_ids?.includes(16) ? 1 : 0}`;
+                watch.textContent = 'View title';
+                const saved = getSavedList().some(entry => String(entry.id) === String(item.id));
+                const save = document.createElement('button');
+                save.className = 'rounded-lg border border-white/10 px-3 py-2 text-[9px] font-bold hover:border-rose-400';
+                save.type = 'button';
+                save.textContent = saved ? 'Saved' : '＋ My List';
+                save.setAttribute('aria-pressed',String(saved));
+                save.addEventListener('click',() => {
+                    const list = getSavedList();
+                    const index = list.findIndex(entry => String(entry.id) === String(item.id));
+                    if (index >= 0) list.splice(index,1);
+                    else list.push({id:String(item.id),title:item.title,image:item.poster_path ? `${IMAGE}${item.poster_path}` : '',type:item.type,isAnime:item.genre_ids?.includes(16) || false});
+                    localStorage.setItem('clique_watchlist',JSON.stringify(list));
+                    save.textContent = index >= 0 ? '＋ My List' : 'Saved';
+                    save.setAttribute('aria-pressed',String(index < 0));
+                });
+                actions.append(watch,save);
+                details.append(date,title,type,overview,actions);
+                card.append(image,details);
+                return card;
+            }));
+        }
+        async function loadReleases() {
+            setupMonths();
+            const today = new Date().toISOString().slice(0,10);
+            const common = {page:'1'};
+            try {
+                const [movies,shows] = await Promise.all([
+                    fetchResults('/movie/upcoming',new URLSearchParams(common)),
+                    fetchResults('/discover/tv',new URLSearchParams({...common,'sort_by':'first_air_date.asc','first_air_date.gte':today,'include_null_first_air_dates':'false'}))
+                ]);
+                releases = [
+                    ...movies.map(item=>({...item,type:'movie',title:item.title,date:item.release_date})),
+                    ...shows.map(item=>({...item,type:'tv',title:item.name,date:item.first_air_date}))
+                ].filter(item=>item.date && item.date >= today)
+                    .sort((a,b)=>a.date.localeCompare(b.date))
+                    .slice(0,120);
+                render();
+            } catch(error) {
+                console.error('Unable to load upcoming releases:',error);
+                const status = document.getElementById('status');
+                status.textContent = 'Could not load upcoming releases. ';
+                const retry = document.createElement('button');
+                retry.className = 'font-bold underline';
+                retry.textContent = 'Try again';
+                retry.addEventListener('click',loadReleases);
+                status.append(retry);
+            }
+        }
+        loadReleases();
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js?v=48').catch(error => {
+                    console.error('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
+    <script src="visitor-log.js?v=2"></script>
+</body>
+</html>

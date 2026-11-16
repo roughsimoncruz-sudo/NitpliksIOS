@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+    <script src="profile-storage.js"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-white">
+    <main class="mx-auto max-w-3xl px-4 py-10">
+        <a href="index.html" class="text-xs font-black uppercase tracking-widest text-cyan-300">← Back to Nitpliks</a>
+        <header class="mt-8">
+            <p class="text-xs font-black uppercase tracking-[.25em] text-cyan-300">Your watch community</p>
+            <h1 class="mt-2 text-4xl font-black">Social</h1>
+            <p class="mt-3 text-sm text-slate-400">Share what you love, follow local profiles, and invite friends to watch together.</p>
+        </header>
+        <section class="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <h2 class="text-lg font-black">Follow profiles</h2>
+            <form id="followForm" class="mt-4 flex gap-2">
+                <input id="followName" required maxlength="40" class="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm" placeholder="Username">
+                <button class="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-black text-slate-950">Follow</button>
+            </form>
+            <div id="following" class="mt-4 flex flex-wrap gap-2"></div>
+        </section>
+        <section class="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div class="flex items-center justify-between gap-3">
+                <h2 class="text-lg font-black">Activity</h2>
+                <button id="shareList" type="button" class="rounded-xl border border-white/10 px-3 py-2 text-xs font-black">Share My List</button>
+            </div>
+            <p id="shareStatus" role="status" class="mt-2 text-xs text-cyan-200"></p>
+            <div id="activity" class="mt-4 space-y-3"></div>
+        </section>
+    </main>
+    <script>
+        const read = key => { try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; } catch (error) { console.error('Unable to read social data:', error); return []; } };
+        const render = () => {
+            const following = document.getElementById('following');
+            following.replaceChildren(...read('clique_following').map(name => { const item = document.createElement('span'); item.className = 'rounded-full bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100'; item.textContent = `@${name}`; return item; }));
+            const activity = [...read('clique_activity'), ...read('clique_reviews').map(item => ({ message: `Reviewed ${item.title || 'a title'}.`, createdAt: item.updatedAt || item.createdAt }))].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+            document.getElementById('activity').replaceChildren(...(activity.length ? activity.slice(0, 20).map(item => { const row = document.createElement('p'); row.className = 'rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-slate-300'; row.textContent = item.message; return row; }) : [Object.assign(document.createElement('p'), { className: 'text-sm text-slate-500', textContent: 'Your activity will appear here as you watch and review titles.' })]));
+        };
+        document.getElementById('followForm').addEventListener('submit', event => { event.preventDefault(); const input = document.getElementById('followName'); const values = read('clique_following'); if (!values.includes(input.value.trim())) { values.unshift(input.value.trim()); localStorage.setItem('clique_following', JSON.stringify(values.slice(0, 50))); } input.value = ''; render(); });
+        document.getElementById('shareList').addEventListener('click', async () => { const url = new URL('public-collection.html', location.href); url.searchParams.set('profile', localStorage.getItem('clique_active_profile') || 'guest'); try { await navigator.clipboard.writeText(url.href); document.getElementById('shareStatus').textContent = 'Share link copied.'; } catch (error) { document.getElementById('shareStatus').textContent = 'Copy was unavailable. Open the public collection page to share it.'; } });
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Nitpliks">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#020817">
+    <title>Marvel Movies - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --panel-border: rgba(148, 163, 184, 0.18);
+            --muted: #a5b4cf;
+        }
+        * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(103, 232, 249, 0.14), transparent 22%),
+                radial-gradient(circle at 82% 20%, rgba(139, 92, 246, 0.12), transparent 24%),
+                linear-gradient(180deg, #020817 0%, #020b1a 100%);
+            color: #f8fafc;
+        }
+        .glass-nav {
+            background: rgba(2, 8, 23, 0.78);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        .movie-card {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.72));
+            border: 1px solid var(--panel-border);
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .movie-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(103, 232, 249, 0.5);
+            box-shadow: 0 24px 40px rgba(2, 8, 23, 0.4);
+        }
+        .poster { aspect-ratio: 2 / 3; background: rgba(15, 23, 42, 0.8); }
+        .pager-button {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--panel-border);
+            transition: all 0.2s ease;
+        }
+        .pager-button:not(:disabled):hover {
+            color: #020817;
+            background: #67e8f9;
+            border-color: #67e8f9;
+        }
+        .pager-button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .collection-link {
+            border: 1px solid var(--panel-border);
+            background: rgba(15, 23, 42, 0.72);
+            transition: all 0.2s ease;
+        }
+        .collection-link:hover { border-color: rgba(103, 232, 249, 0.5); color: #67e8f9; }
+        .collection-link.active {
+            color: #020817;
+            background: linear-gradient(135deg, #67e8f9, #38bdf8);
+            border-color: transparent;
+        }
+        .phase-card {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.88), rgba(15, 23, 42, 0.58));
+            border: 1px solid var(--panel-border);
+        }
+        .timeline-item {
+            background: rgba(15, 23, 42, 0.66);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .timeline-item:hover {
+            background: rgba(30, 41, 59, 0.76);
+            border-color: rgba(103, 232, 249, 0.32);
+        }
+        .timeline-thumbnail {
+            width: 3.5rem;
+            height: 5.25rem;
+            flex: 0 0 3.5rem;
+            background: rgba(2, 8, 23, 0.8);
+        }
+        .timeline-watch {
+            background: rgba(103, 232, 249, 0.1);
+            border: 1px solid rgba(103, 232, 249, 0.2);
+            color: #a5f3fc;
+        }
+        .timeline-watch:hover { background: rgba(103, 232, 249, 0.2); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
+        body { background: linear-gradient(180deg, #080808, #101010 45%, #080808); color: #f8fafc; }
+        .glass-nav { position: sticky; top: 0.75rem; margin: 0.75rem auto 0; width: calc(100% - 1.5rem); max-width: 1280px; border: 1px solid rgba(255,255,255,.1); border-radius: 1rem; background: rgba(8,8,8,.9); box-shadow: 0 12px 36px rgba(0,0,0,.4); }
+        .glass-nav a:hover { color: #fda4af; }
+        .collection-hero { position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 1.5rem; padding: 2rem; background: radial-gradient(ellipse at 92% 10%, rgba(225,29,53,.28), transparent 40%), linear-gradient(120deg, #171717, #0b0b0b 70%); }
+        .collection-hero::after { content: ""; position: absolute; width: 14rem; height: 14rem; right: 7%; top: -10rem; border-radius: 50%; border: 1px solid rgba(251,51,72,.25); box-shadow: 0 0 0 2rem rgba(251,51,72,.03), 0 0 0 4rem rgba(251,51,72,.025); pointer-events: none; }
+        .collection-hero > * { position: relative; z-index: 1; }
+        .collection-eyebrow { color: #fda4af; }
+        .movie-card { background: #171717; border-color: rgba(255,255,255,.1); border-radius: .9rem; }
+        .movie-card:hover { transform: scale(1.025); border-color: rgba(251,51,72,.65); box-shadow: 0 18px 34px rgba(0,0,0,.48); z-index: 2; }
+        .movie-card > a > div:last-child { background: linear-gradient(180deg, #1a1a1a, #111); }
+        .movie-card .text-cyan-100 { color: #fecdd3; }
+        .pager-button:not(:disabled):hover { background: #e11d35; border-color: #e11d35; color: #fff; box-shadow: 0 8px 20px rgba(225,29,53,.2); }
+        .pager-button { background: #171717; border-color: rgba(255,255,255,.12); }
+        .collection-link { background: #1b1b1b; border-color: rgba(255,255,255,.12); }
+        .collection-link:hover { border-color: #fb3348; color: #fecdd3; }
+        .collection-link.active { background: #e11d35; color: #fff; border-color: #e11d35; }
+        .phase-card { background: #141414; border-color: rgba(255,255,255,.1); }
+        .timeline-item { background: #1a1a1a; border-color: rgba(255,255,255,.08); }
+        .timeline-item:hover { background: #222; border-color: rgba(251,51,72,.4); }
+        .timeline-watch { background: rgba(225,29,53,.12); border-color: rgba(251,51,72,.28); color: #fecdd3; }
+        .timeline-watch:hover { background: rgba(225,29,53,.24); }
+        #marvelDetailsModal {
+            background: rgba(0,0,0,.88);
+            backdrop-filter: blur(14px);
+        }
+        .marvel-details-dialog {
+            width: min(980px, calc(100vw - 2rem));
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,.12);
+            background: #141414;
+            box-shadow: 0 30px 90px rgba(0,0,0,.7);
+        }
+        .marvel-details-trailer {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            background: #050505;
+        }
+        .marvel-details-trailer iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        .marvel-details-copy {
+            background: linear-gradient(145deg, #1d1d1d, #111);
+        }
+        .mcu-phase-banner {
+            position: relative;
+            min-height: 15rem;
+            overflow: hidden;
+            border-radius: 1.1rem;
+            background: linear-gradient(110deg, #171717, #080808);
+            background-size: cover;
+            background-position: center 25%;
+            isolation: isolate;
+        }
+        .mcu-phase-banner::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(90deg, rgba(0,0,0,.92), rgba(0,0,0,.6) 42%, rgba(0,0,0,.12)), linear-gradient(0deg, rgba(0,0,0,.75), transparent 60%);
+        }
+        .mcu-phase-banner-content {
+            display: flex;
+            min-height: 15rem;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 1.5rem;
+        }
+        .mcu-phase-banner-kicker {
+            color: #fda4af;
+            font-size: .6rem;
+            font-weight: 900;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+        }
+        .mcu-phase-banner h3 {
+            margin-top: .35rem;
+            color: #fff;
+            font-size: clamp(1.6rem, 4vw, 2.8rem);
+            font-weight: 900;
+            letter-spacing: -.05em;
+        }
+        .mcu-phase-banner-years {
+            margin-top: .45rem;
+            color: #cbd5e1;
+            font-size: .72rem;
+            font-weight: 700;
+        }
+        .mcu-phase-content {
+            position: relative;
+            margin-top: -1.5rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,.1);
+            border-top: 0;
+            border-radius: 0 0 1.1rem 1.1rem;
+            background: #141414;
+        }
+        @media (max-width: 640px) {
+            .mcu-phase-banner,
+            .mcu-phase-banner-content { min-height: 12rem; }
+            .mcu-phase-banner-content,
+            .mcu-phase-content { padding: 1rem; }
+        }
+        :focus-visible { outline: 2px solid #fb3348; outline-offset: 3px; }
+        .compact-cards #movieGrid { grid-template-columns: repeat(auto-fill,minmax(145px,1fr)); }
+        @media (max-width: 640px) { .collection-hero { padding: 1.35rem; border-radius: 1rem; } }
+    </style>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+    <script src="profile-storage.js"></script>
+    <script src="details-modal.js" defer></script>
+    <script src="sync.js"></script>
+</head>
+<body class="marvel-page selection:bg-cyan-300 selection:text-slate-950">
+    <nav class="glass-nav sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="index.html" class="flex shrink-0 items-center gap-2.5 text-white font-extrabold text-sm hover:text-rose-300 transition-colors">
+                <img class="site-logo" src="nitpliks-logo.png?v=40" width="160" height="53" alt="Nitpliks home">
+            </a>
+            <div class="ml-6 flex min-w-0 max-w-[68vw] items-center gap-3 overflow-x-auto whitespace-nowrap text-[9px] font-extrabold uppercase tracking-wider text-slate-400 sm:max-w-none sm:gap-5 sm:text-[10px]">
+                <a href="kdrama.html" class="hover:text-rose-300">K-Drama</a>
+                <a href="anime.html" class="hover:text-rose-300">Anime</a>
+                <a href="index.html" class="hover:text-rose-300">Discover</a>
+                <a href="my-list.html" class="hover:text-rose-300">My List</a>
+                <a href="search-results.html" class="hover:text-rose-300">Search</a>
+                <a href="release-calendar.html" class="hover:text-rose-300">Releases</a>
+                <a href="my-ratings.html" class="hover:text-rose-300">Ratings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <header class="collection-hero mb-9 sm:mb-12">
+            <p class="collection-eyebrow text-[10px] font-black uppercase tracking-[0.3em] mb-3">The Marvel Collection</p>
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div>
+                    <h1 id="collectionTitle" class="text-3xl sm:text-5xl font-black tracking-tight text-white">All Marvel Movies</h1>
+                    <p id="collectionDescription" class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Browse Marvel movies from across studios, ordered by release date.</p>
+                </div>
+                <span id="resultsCount" class="text-xs font-bold text-slate-400"></span>
+            </div>
+            <nav aria-label="Marvel movie collections" class="flex flex-wrap gap-2 pt-6">
+                <a id="allMarvelLink" href="marvel.html?collection=all" class="collection-link rounded-xl px-4 py-2.5 text-xs font-extrabold text-slate-300">All Marvel Movies</a>
+                <a id="mcuLink" href="marvel.html?collection=mcu" class="collection-link rounded-xl px-4 py-2.5 text-xs font-extrabold text-slate-300">Marvel Cinematic Universe</a>
+            </nav>
+        </header>
+
+        <section id="catalogFilters" class="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-white/5 p-4" aria-label="Marvel movie sorting and display options">
+            <label class="grid gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                Sort by
+                <select id="sortOrder" class="min-h-10 rounded-lg border border-white/10 bg-neutral-900 px-3 text-xs normal-case tracking-normal text-white">
+                    <option value="release_date.asc">Release date</option>
+                    <option value="popularity.desc">Popularity</option>
+                    <option value="vote_average.desc">Highest rated</option>
+                    <option value="release_date.desc">Newest</option>
+                </select>
+            </label>
+            <label class="grid gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                Year
+                <select id="yearFilter" class="min-h-10 rounded-lg border border-white/10 bg-neutral-900 px-3 text-xs normal-case tracking-normal text-white">
+                    <option value="">Any year</option>
+                </select>
+            </label>
+            <label class="inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-slate-400">
+                <input id="compactCardsToggle" type="checkbox" class="h-4 w-4 accent-rose-600">
+                Compact cards
+            </label>
+        </section>
+
+        <div id="statusMessage" role="status" aria-live="polite" class="hidden min-h-12 items-center gap-3 text-sm text-slate-400">
+            <span class="w-5 h-5 border-2 border-cyan-300 border-t-transparent rounded-full spinner" aria-hidden="true"></span>
+            Loading Marvel movies...
+        </div>
+        <div id="movieGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"></div>
+        <div id="mcuTimeline" class="hidden space-y-8"></div>
+        <nav id="pagination" aria-label="Marvel movie pages" class="hidden mt-10 items-center justify-center gap-4">
+            <button id="previousPage" type="button" class="pager-button rounded-xl px-4 py-2.5 text-xs font-extrabold text-white">Previous</button>
+            <span id="pageLabel" class="min-w-20 text-center text-xs font-bold text-slate-400"></span>
+            <button id="nextPage" type="button" class="pager-button rounded-xl px-4 py-2.5 text-xs font-extrabold text-white">Next</button>
+        </nav>
+    </main>
+
+    <footer class="mt-auto border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+        Explore the Marvel collection.
+    </footer>
+
+    <div id="marvelDetailsModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4" aria-hidden="true">
+        <section class="marvel-details-dialog relative rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="marvelDetailsTitle">
+            <button id="closeMarvelDetails" type="button" class="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/70 text-white hover:bg-rose-600" aria-label="Close details">✕</button>
+            <div id="marvelDetailsTrailer" class="marvel-details-trailer"></div>
+            <div class="marvel-details-copy p-5 sm:p-7">
+                <p id="marvelDetailsMeta" class="text-[10px] font-black uppercase tracking-[.2em] text-rose-300">Marvel Cinematic Universe</p>
+                <h2 id="marvelDetailsTitle" class="mt-2 text-2xl sm:text-4xl font-black text-white">Loading title...</h2>
+                <div id="marvelDetailsFacts" class="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-300"></div>
+                <p id="marvelDetailsOverview" class="mt-5 max-w-3xl text-sm leading-7 text-slate-300">Loading information...</p>
+                <div class="mt-5 flex flex-wrap gap-3">
+                    <button id="marvelDetailsWatch" type="button" class="rounded-xl bg-rose-600 px-5 py-3 text-xs font-extrabold uppercase tracking-wider text-white hover:bg-rose-500">Watch now</button>
+                    <div id="marvelDetailsCast" class="flex flex-wrap items-center gap-2 text-xs text-slate-400"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const TMDB_API_KEY = "295a780c3e5aae731d6f2e804c6d13e5";
+        const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+        const TMDB_IMG_URL = "https://image.tmdb.org/t/p/w500";
+        const IS_TV_DIRECT_PLAY = /smart-tv|smarttv|tizen|web0s|webos|netcast|viera|bravia|hbbtv|googletv|google tv|appletv|android[^)]*\btv\b|tcl[^)]*tv/i.test(navigator.userAgent)
+            || (/android/i.test(navigator.userAgent)
+                && Math.max(window.screen.width, window.screen.height) >= 1200
+                && Math.min(window.screen.width, window.screen.height) >= 650
+                && navigator.maxTouchPoints === 0);
+        const MOVIE_GENRES = {
+            28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
+            80: 'Crime', 18: 'Drama', 14: 'Fantasy', 27: 'Horror',
+            9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi', 53: 'Thriller'
+        };
+        const MARVEL_STUDIOS_COMPANY_ID = 420;
+        const MARVEL_COMICS_KEYWORD_ID = 180547;
+        const collection = new URLSearchParams(window.location.search).get('collection') === 'mcu' ? 'mcu' : 'all';
+        const mcuSagas = [
+            {
+                name: 'The Infinity Saga',
+                phases: [
+                    {
+                        name: 'Phase One',
+                        years: '2008-2012',
+                        entries: [
+                            ['Iron Man', 'May 2008', 'Movie', 'movie'],
+                            ['The Incredible Hulk', 'June 2008', 'Movie', 'movie'],
+                            ['Iron Man 2', 'May 2010', 'Movie', 'movie'],
+                            ['Thor', 'May 2011', 'Movie', 'movie'],
+                            ['Captain America: The First Avenger', 'July 2011', 'Movie', 'movie'],
+                            ['The Avengers', 'May 2012', 'Movie', 'movie']
+                        ]
+                    },
+                    {
+                        name: 'Phase Two',
+                        years: '2013-2015',
+                        entries: [
+                            ['Iron Man 3', 'May 2013', 'Movie', 'movie'],
+                            ['Thor: The Dark World', 'November 2013', 'Movie', 'movie'],
+                            ['Captain America: The Winter Soldier', 'April 2014', 'Movie', 'movie'],
+                            ['Guardians of the Galaxy', 'August 2014', 'Movie', 'movie'],
+                            ['Avengers: Age of Ultron', 'May 2015', 'Movie', 'movie'],
+                            ['Ant-Man', 'July 2015', 'Movie', 'movie']
+                        ]
+                    },
+                    {
+                        name: 'Phase Three',
+                        years: '2016-2019',
+                        entries: [
+                            ['Captain America: Civil War', 'May 2016', 'Movie', 'movie'],
+                            ['Doctor Strange', 'November 2016', 'Movie', 'movie'],
+                            ['Guardians of the Galaxy Vol. 2', 'May 2017', 'Movie', 'movie'],
+                            ['Spider-Man: Homecoming', 'July 2017', 'Movie', 'movie'],
+                            ['Thor: Ragnarok', 'November 2017', 'Movie', 'movie'],
+                            ['Black Panther', 'February 2018', 'Movie', 'movie'],
+                            ['Avengers: Infinity War', 'April 2018', 'Movie', 'movie'],
+                            ['Ant-Man and the Wasp', 'July 2018', 'Movie', 'movie'],
+                            ['Captain Marvel', 'March 2019', 'Movie', 'movie'],
+                            ['Avengers: Endgame', 'April 2019', 'Movie', 'movie'],
+                            ['Spider-Man: Far From Home', 'July 2019', 'Movie', 'movie']
+                        ]
+                    }
+                ]
+            },
+            {
+                name: 'The Multiverse Saga',
+                phases: [
+                    {
+                        name: 'Phase Four',
+                        years: '2021-2022',
+                        entries: [
+                            ['WandaVision', 'January 2021', 'Disney+ Series', 'tv'],
+                            ['The Falcon and the Winter Soldier', 'March 2021', 'Disney+ Series', 'tv'],
+                            ['Loki Season 1', 'June 2021', 'Disney+ Series', 'tv', 'Loki'],
+                            ['Black Widow', 'July 2021', 'Movie', 'movie'],
+                            ['What If...? Season 1', 'August 2021', 'Disney+ Animated Series', 'tv', 'What If...?'],
+                            ['Shang-Chi and the Legend of the Ten Rings', 'September 2021', 'Movie', 'movie'],
+                            ['Eternals', 'November 2021', 'Movie', 'movie'],
+                            ['Hawkeye', 'November 2021', 'Disney+ Series', 'tv'],
+                            ['Spider-Man: No Way Home', 'December 2021', 'Movie', 'movie'],
+                            ['Moon Knight', 'March 2022', 'Disney+ Series', 'tv'],
+                            ['Doctor Strange in the Multiverse of Madness', 'May 2022', 'Movie', 'movie'],
+                            ['Ms. Marvel', 'June 2022', 'Disney+ Series', 'tv'],
+                            ['Thor: Love and Thunder', 'July 2022', 'Movie', 'movie'],
+                            ['I Am Groot Season 1', 'August 2022', 'Disney+ Animated Shorts', 'tv', 'I Am Groot'],
+                            ['She-Hulk: Attorney at Law', 'August 2022', 'Disney+ Series', 'tv'],
+                            ['Werewolf by Night', 'October 2022', 'Disney+ Special Presentation', 'movie'],
+                            ['Black Panther: Wakanda Forever', 'November 2022', 'Movie', 'movie'],
+                            ['The Guardians of the Galaxy Holiday Special', 'November 2022', 'Disney+ Special Presentation', 'tv']
+                        ]
+                    },
+                    {
+                        name: 'Phase Five',
+                        years: '2023-2025',
+                        entries: [
+                            ['Ant-Man and the Wasp: Quantumania', 'February 2023', 'Movie', 'movie'],
+                            ['Guardians of the Galaxy Vol. 3', 'May 2023', 'Movie', 'movie'],
+                            ['Secret Invasion', 'June 2023', 'Disney+ Series', 'tv'],
+                            ['I Am Groot Season 2', 'September 2023', 'Disney+ Animated Shorts', 'tv', 'I Am Groot'],
+                            ['Loki Season 2', 'October 2023', 'Disney+ Series', 'tv', 'Loki'],
+                            ['The Marvels', 'November 2023', 'Movie', 'movie'],
+                            ['What If...? Season 2', 'December 2023', 'Disney+ Animated Series', 'tv', 'What If...?'],
+                            ['Echo', 'January 2024', 'Disney+ Series', 'tv'],
+                            ['X-Men \'97 Season 1', 'March 2024', 'Disney+ Animated Series (Outside core MCU live-action continuity)', 'tv', 'X-Men \'97'],
+                            ['Deadpool & Wolverine', 'July 2024', 'Movie', 'movie'],
+                            ['Agatha All Along', 'September 2024', 'Disney+ Series', 'tv'],
+                            ['What If...? Season 3', 'December 2024', 'Disney+ Animated Series', 'tv', 'What If...?'],
+                            ['Captain America: Brave New World', 'February 2025', 'Movie', 'movie'],
+                            ['Daredevil: Born Again Season 1', 'March 2025', 'Disney+ Series', 'tv', 'Daredevil: Born Again'],
+                            ['Thunderbolts*', 'May 2025', 'Movie', 'movie']
+                        ]
+                    },
+                    {
+                        name: 'Phase Six & Upcoming Slate',
+                        years: '2025-2027+',
+                        entries: [
+                            ['The Fantastic Four: First Steps', 'July 2025', 'Movie', 'movie'],
+                            ['Ironheart', 'Late 2025', 'Disney+ Series', 'tv'],
+                            ['Eyes of Wakanda', 'Late 2025', 'Disney+ Animated Series', 'tv'],
+                            ['Your Friendly Neighborhood Spider-Man Season 1', 'Late 2025', 'Disney+ Animated Series', 'tv', 'Your Friendly Neighborhood Spider-Man'],
+                            ['Wonder Man', 'January 2026', 'Disney+ Series', 'tv'],
+                            ['Daredevil: Born Again Season 2', 'March 2026', 'Disney+ Series', 'tv', 'Daredevil: Born Again'],
+                            ['Spider-Man: Brand New Day', 'July 2026', 'Movie', 'movie'],
+                            ['VisionQuest', 'Late 2026', 'Disney+ Series', 'tv'],
+                            ['Avengers: Doomsday', 'December 2026', 'Movie', 'movie'],
+                            ['Avengers: Secret Wars', 'December 2027', 'Movie', 'movie']
+                        ]
+                    }
+                ]
+            }
+        ];
+        let currentPage = 1;
+        let totalPages = 1;
+        let latestMovieRequest = 0;
+        const mcuSearchCache = new Map();
+
+        const statusMessage = document.getElementById('statusMessage');
+        const movieGrid = document.getElementById('movieGrid');
+        const mcuTimeline = document.getElementById('mcuTimeline');
+        const pagination = document.getElementById('pagination');
+
+        function setupCollection() {
+            const isMcu = collection === 'mcu';
+            document.title = `${isMcu ? 'MCU' : 'Marvel'} Movies - Nitpliks`;
+            document.getElementById('collectionTitle').textContent = isMcu
+                ? 'Marvel Cinematic Universe'
+                : 'All Marvel Movies';
+            document.getElementById('collectionDescription').textContent = isMcu
+                ? 'Explore the Marvel Studios movies that make up the MCU, ordered by release date.'
+                : 'Browse Marvel-related movies from across studios, ordered by release date.';
+            document.getElementById(isMcu ? 'mcuLink' : 'allMarvelLink').classList.add('active');
+            document.getElementById(isMcu ? 'mcuLink' : 'allMarvelLink').setAttribute('aria-current', 'page');
+            movieGrid.classList.toggle('hidden', isMcu);
+            mcuTimeline.classList.toggle('hidden', !isMcu);
+            document.getElementById('catalogFilters').classList.toggle('hidden', isMcu);
+            if (isMcu) {
+                document.getElementById('resultsCount').textContent =
+                    `${mcuSagas.reduce((count, saga) => count + saga.phases.reduce((phaseCount, phase) => phaseCount + phase.entries.length, 0), 0)} titles`;
+                renderMcuTimeline();
+            }
+        }
+
+        function formatRating(value) {
+            const rating = Number(value);
+            return Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : 'N/A';
+        }
+
+        function setupCatalogPreferences() {
+            const yearSelect = document.getElementById('yearFilter');
+            for (let year = new Date().getFullYear(); year >= 1940; year--) {
+                const option = document.createElement('option');
+                option.value = String(year);
+                option.textContent = String(year);
+                yearSelect.append(option);
+            }
+            const compactToggle = document.getElementById('compactCardsToggle');
+            compactToggle.checked = localStorage.getItem('clique_compact_cards') === 'true';
+            document.body.classList.toggle('compact-cards', compactToggle.checked);
+            compactToggle.addEventListener('change', () => {
+                localStorage.setItem('clique_compact_cards', String(compactToggle.checked));
+                document.body.classList.toggle('compact-cards', compactToggle.checked);
+            });
+            document.getElementById('sortOrder').addEventListener('change', () => loadMovies(1));
+            yearSelect.addEventListener('change', () => loadMovies(1));
+        }
+
+        function createMovieCard(movie) {
+            const card = document.createElement('article');
+            card.className = 'movie-card group relative overflow-hidden rounded-2xl text-left';
+            const link = document.createElement('a');
+            link.className = 'block';
+            link.href = `watch.html?id=${encodeURIComponent(movie.id)}&type=movie&anime=0`;
+            link.setAttribute('aria-label', `Watch ${movie.title || 'Untitled'}`);
+            if (IS_TV_DIRECT_PLAY) {
+                link.dataset.directPlayer = 'true';
+            } else {
+                link.addEventListener('click', event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openMarvelDetails(movie.id, 'movie', movie.title || 'Untitled');
+                });
+            }
+
+            const poster = document.createElement('div');
+            poster.className = 'poster relative overflow-hidden';
+            const image = document.createElement('img');
+            image.className = 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105';
+            image.loading = 'lazy';
+            image.alt = movie.title ? `${movie.title} poster` : 'Movie poster';
+            image.src = movie.poster_path
+                ? `${TMDB_IMG_URL}${movie.poster_path}`
+                : 'https://placehold.co/500x750/0f172a/e2e8f0?text=No+Poster';
+            poster.append(image);
+
+            const rating = document.createElement('span');
+            rating.className = 'absolute left-2.5 top-2.5 rounded-lg border border-white/10 bg-slate-950/85 px-2 py-1 text-[10px] font-black text-amber-300';
+            rating.textContent = `★ ${formatRating(movie.vote_average)}`;
+            poster.append(rating);
+
+            const details = document.createElement('div');
+            details.className = 'p-3.5 space-y-2';
+            const title = document.createElement('h2');
+            title.className = 'truncate text-xs font-extrabold text-white';
+            title.textContent = movie.title || 'Untitled';
+            const date = document.createElement('p');
+            date.className = 'text-[10px] font-semibold text-slate-400';
+            const year = movie.release_date ? movie.release_date.slice(0, 4) : 'Year unavailable';
+            const votes = Number(movie.vote_count) || 0;
+            date.textContent = `${year} · ${votes.toLocaleString()} votes`;
+            const overview = document.createElement('p');
+            overview.className = 'line-clamp-3 min-h-[3.6em] text-[10px] leading-relaxed text-slate-400';
+            overview.textContent = movie.overview || 'Synopsis not available yet.';
+            const genres = document.createElement('div');
+            genres.className = 'flex flex-wrap gap-1.5';
+            (movie.genre_ids || []).slice(0, 2).forEach(id => {
+                if (!MOVIE_GENRES[id]) return;
+                const chip = document.createElement('span');
+                chip.className = 'rounded-full border border-cyan-200/10 bg-slate-900/80 px-2 py-1 text-[8px] font-bold text-cyan-100';
+                chip.textContent = MOVIE_GENRES[id];
+                genres.append(chip);
+            });
+            details.append(title, date, overview, genres);
+            link.append(poster, details);
+            const saved = readCatalogWatchlist().some(item => String(item.id) === String(movie.id));
+            const saveButton = document.createElement('button');
+            saveButton.type = 'button';
+            saveButton.className = 'absolute right-2.5 top-2.5 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/75 text-sm font-black text-white hover:border-rose-400 hover:bg-rose-700';
+            saveButton.textContent = saved ? '✓' : '+';
+            saveButton.setAttribute('aria-label', `${saved ? 'Remove from' : 'Add to'} My List: ${movie.title || 'Untitled'}`);
+            saveButton.setAttribute('aria-pressed', String(saved));
+            saveButton.addEventListener('click', () => toggleCatalogWatchlist(movie.id, movie.title || 'Untitled', movie.poster_path ? `${TMDB_IMG_URL}${movie.poster_path}` : '', 'movie', false, saveButton));
+            card.append(link, saveButton);
+            return card;
+        }
+
+        function readCatalogWatchlist() {
+            try {
+                const list = JSON.parse(localStorage.getItem('clique_watchlist') || '[]');
+                return Array.isArray(list) ? list : [];
+            } catch (error) {
+                console.error('Unable to read My List:', error);
+                return [];
+            }
+        }
+
+        function toggleCatalogWatchlist(id, title, image, type, isAnime, button) {
+            const list = readCatalogWatchlist();
+            const index = list.findIndex(item => String(item.id) === String(id));
+            if (index >= 0) list.splice(index, 1);
+            else list.push({ id: String(id), title, image, type, isAnime });
+            localStorage.setItem('clique_watchlist', JSON.stringify(list));
+            const saved = index < 0;
+            button.textContent = saved ? '✓' : '+';
+            button.setAttribute('aria-pressed', String(saved));
+            button.setAttribute('aria-label', `${saved ? 'Remove from' : 'Add to'} My List: ${title}`);
+        }
+
+        function renderMcuTimeline() {
+            mcuTimeline.replaceChildren(...mcuSagas.map(saga => {
+                const sagaSection = document.createElement('section');
+                sagaSection.className = 'space-y-4';
+
+                const sagaHeading = document.createElement('h2');
+                sagaHeading.className = 'text-xl sm:text-2xl font-black tracking-tight text-white';
+                sagaHeading.textContent = saga.name;
+                sagaSection.append(sagaHeading);
+
+                const phaseGrid = document.createElement('div');
+                phaseGrid.className = 'grid gap-6';
+                saga.phases.forEach(phase => {
+                    const phaseCard = document.createElement('section');
+                    phaseCard.className = 'phase-card overflow-hidden rounded-2xl';
+                    const phaseBanner = document.createElement('div');
+                    phaseBanner.className = 'mcu-phase-banner';
+                    phaseBanner.dataset.title = phase.entries[0][4] || phase.entries[0][0];
+                    phaseBanner.dataset.mediaType = phase.entries[0][3];
+                    const bannerContent = document.createElement('div');
+                    bannerContent.className = 'mcu-phase-banner-content';
+                    const bannerKicker = document.createElement('p');
+                    bannerKicker.className = 'mcu-phase-banner-kicker';
+                    bannerKicker.textContent = `${saga.name} · Marvel Cinematic Universe`;
+                    const phaseName = document.createElement('h3');
+                    phaseName.textContent = phase.name;
+                    const years = document.createElement('p');
+                    years.className = 'mcu-phase-banner-years';
+                    years.textContent = `${phase.years} · ${phase.entries.length} titles`;
+                    bannerContent.append(bannerKicker, phaseName, years);
+                    phaseBanner.append(bannerContent);
+
+                    const entries = document.createElement('ol');
+                    entries.className = 'space-y-2';
+                    phase.entries.forEach(([title, date, category, mediaType, searchTitle]) => {
+                        const row = document.createElement('li');
+                        row.className = 'timeline-item flex items-center gap-3 rounded-xl p-2.5';
+                        row.tabIndex = 0;
+                        row.setAttribute('role', 'button');
+                        row.setAttribute('aria-label', `Show details for ${title}`);
+                        row.addEventListener('click', event => {
+                            if (!event.target.closest('.timeline-watch')) {
+                                openMarvelDetailsByTitle(searchTitle || title, mediaType);
+                            }
+                        });
+                        row.addEventListener('keydown', event => {
+                            if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('.timeline-watch')) {
+                                event.preventDefault();
+                                openMarvelDetailsByTitle(searchTitle || title, mediaType);
+                            }
+                        });
+
+                        const thumbnail = document.createElement('img');
+                        thumbnail.className = 'timeline-thumbnail rounded-lg object-cover';
+                        thumbnail.loading = 'lazy';
+                        thumbnail.alt = `${title} thumbnail`;
+                        thumbnail.src = 'https://placehold.co/112x168/0f172a/94a3b8?text=Loading';
+                        thumbnail.dataset.title = searchTitle || title;
+                        thumbnail.dataset.mediaType = mediaType;
+
+                        const details = document.createElement('div');
+                        details.className = 'min-w-0 flex-1';
+                        const name = document.createElement('p');
+                        name.className = 'text-xs font-bold leading-relaxed text-white';
+                        name.textContent = title;
+                        const meta = document.createElement('p');
+                        meta.className = 'mt-1 text-[10px] leading-relaxed text-slate-400';
+                        meta.textContent = `${date} · ${category}`;
+                        details.append(name, meta);
+
+                        const watchButton = document.createElement('button');
+                        watchButton.type = 'button';
+                        watchButton.className = 'timeline-watch flex-shrink-0 rounded-lg px-2.5 py-2 text-[10px] font-extrabold';
+                        watchButton.textContent = 'Watch';
+                        watchButton.dataset.title = searchTitle || title;
+                        watchButton.dataset.mediaType = mediaType;
+                        row.append(thumbnail, details, watchButton);
+                        entries.append(row);
+                    });
+                    const phaseContent = document.createElement('div');
+                    phaseContent.className = 'mcu-phase-content';
+                    phaseContent.append(entries);
+                    phaseCard.append(phaseBanner, phaseContent);
+                    phaseGrid.append(phaseCard);
+                });
+                sagaSection.append(phaseGrid);
+                return sagaSection;
+            }));
+            observeMcuThumbnails();
+        }
+
+        function observeMcuThumbnails() {
+            const thumbnails = mcuTimeline.querySelectorAll('.timeline-thumbnail:not([data-loaded]), .mcu-phase-banner:not([data-loaded])');
+            if (!('IntersectionObserver' in window)) {
+                thumbnails.forEach(loadMcuMedia);
+                return;
+            }
+
+            const observer = new IntersectionObserver((observations, activeObserver) => {
+                observations.forEach(observation => {
+                    if (observation.isIntersecting) {
+                        activeObserver.unobserve(observation.target);
+                        loadMcuMedia(observation.target);
+                    }
+                });
+            }, { rootMargin: '200px' });
+            thumbnails.forEach(thumbnail => observer.observe(thumbnail));
+        }
+
+        async function loadMcuMedia(media) {
+            const title = media.dataset.title;
+            const mediaType = media.dataset.mediaType;
+            const cacheKey = `${mediaType}:${title}`;
+            media.dataset.loaded = 'true';
+            try {
+                let result = mcuSearchCache.get(cacheKey);
+                if (!result) {
+                    const params = new URLSearchParams({ api_key: TMDB_API_KEY, query: title });
+                    const response = await fetch(`${TMDB_BASE_URL}/search/${mediaType}?${params}`);
+                    if (!response.ok) throw new Error(`TMDB returned ${response.status}`);
+                    const data = await response.json();
+                    result = data.results?.[0] || null;
+                    mcuSearchCache.set(cacheKey, result);
+                }
+                if (media.classList.contains('mcu-phase-banner') && result?.backdrop_path) {
+                    media.style.backgroundImage = `url(${TMDB_IMG_URL.replace('/w500', '/w1280')}${result.backdrop_path})`;
+                } else if (result?.poster_path) {
+                    media.src = `${TMDB_IMG_URL}${result.poster_path}`;
+                } else {
+                    if (!media.classList.contains('mcu-phase-banner')) {
+                        media.src = 'https://placehold.co/112x168/0f172a/94a3b8?text=No+Poster';
+                    }
+                }
+            } catch (error) {
+                console.error(`Unable to load thumbnail for "${title}":`, error);
+                if (!media.classList.contains('mcu-phase-banner')) {
+                    media.src = 'https://placehold.co/112x168/0f172a/94a3b8?text=No+Poster';
+                }
+            }
+        }
+
+        function closeMarvelDetails() {
+            const modal = document.getElementById('marvelDetailsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modal.setAttribute('aria-hidden', 'true');
+            document.getElementById('marvelDetailsTrailer').replaceChildren();
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        async function openMarvelDetailsByTitle(title, mediaType) {
+            const params = new URLSearchParams({ api_key: TMDB_API_KEY, query: title });
+            try {
+                const response = await fetch(`${TMDB_BASE_URL}/search/${mediaType}?${params}`);
+                if (!response.ok) throw new Error(`TMDB returned ${response.status}`);
+                const data = await response.json();
+                const result = data.results?.[0];
+                if (!result) throw new Error(`No result found for ${title}`);
+                openMarvelDetails(result.id, mediaType, title);
+            } catch (error) {
+                console.error(`Unable to load Marvel details for "${title}":`, error);
+                statusMessage.textContent = `Could not load details for "${title}".`;
+                statusMessage.classList.remove('hidden');
+                statusMessage.classList.add('flex', 'text-rose-300');
+            }
+        }
+
+        async function openMarvelDetails(id, mediaType, fallbackTitle) {
+            const modal = document.getElementById('marvelDetailsModal');
+            const trailer = document.getElementById('marvelDetailsTrailer');
+            const titleElement = document.getElementById('marvelDetailsTitle');
+            const overview = document.getElementById('marvelDetailsOverview');
+            const facts = document.getElementById('marvelDetailsFacts');
+            const cast = document.getElementById('marvelDetailsCast');
+            const watch = document.getElementById('marvelDetailsWatch');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('overflow-hidden');
+            titleElement.textContent = 'Loading title...';
+            overview.textContent = 'Loading information...';
+            facts.replaceChildren();
+            cast.replaceChildren();
+            trailer.replaceChildren();
+            trailer.className = 'marvel-details-trailer';
+            watch.disabled = true;
+
+            try {
+                const detailUrl = endpoint => {
+                    const params = new URLSearchParams({ api_key: TMDB_API_KEY });
+                    return `${TMDB_BASE_URL}/${mediaType}/${id}${endpoint}?${params}`;
+                };
+                const [detailsResponse, creditsResponse, videosResponse] = await Promise.all([
+                    fetch(detailUrl('')),
+                    fetch(detailUrl('/credits')),
+                    fetch(detailUrl('/videos'))
+                ]);
+                if (!detailsResponse.ok) throw new Error(`TMDB returned ${detailsResponse.status}`);
+                const details = await detailsResponse.json();
+                const credits = creditsResponse.ok ? await creditsResponse.json() : null;
+                const videos = videosResponse.ok ? await videosResponse.json() : null;
+                const title = details.title || details.name || fallbackTitle;
+                const year = (details.release_date || details.first_air_date || '').slice(0, 4);
+                const trailerVideo = (videos?.results || []).find(video =>
+                    video.site === 'YouTube' && video.type === 'Trailer' && video.key
+                ) || (videos?.results || []).find(video => video.site === 'YouTube' && video.key);
+                titleElement.textContent = title;
+                overview.textContent = details.overview || 'No synopsis is available for this title yet.';
+                facts.append(
+                    createMarvelFact(year || 'Year unavailable'),
+                    createMarvelFact(`★ ${formatRating(details.vote_average)}`),
+                    createMarvelFact(mediaType === 'tv' ? 'Series' : 'Movie')
+                );
+                (details.genres || []).slice(0, 4).forEach(genre => facts.append(createMarvelFact(genre.name)));
+                (credits?.cast || []).slice(0, 4).forEach(actor => {
+                    const name = document.createElement('span');
+                    name.textContent = actor.name;
+                    cast.append(name);
+                });
+                if (trailerVideo) {
+                    const iframe = document.createElement('iframe');
+                    iframe.title = `${title} trailer`;
+                    iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+                    iframe.allowFullscreen = true;
+                    iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailerVideo.key)}?autoplay=1&mute=0&controls=1&rel=0&vq=hd1080`;
+                    trailer.append(iframe);
+                } else {
+                    trailer.textContent = 'Trailer unavailable.';
+                    trailer.className = 'marvel-details-trailer flex items-center justify-center text-sm text-slate-400';
+                }
+                watch.disabled = false;
+                watch.onclick = () => {
+                    window.location.href = `watch.html?id=${encodeURIComponent(id)}&type=${mediaType}&anime=0`;
+                };
+            } catch (error) {
+                console.error(`Unable to load Marvel title details for "${fallbackTitle}":`, error);
+                titleElement.textContent = 'Details unavailable';
+                overview.textContent = 'We could not load information for this title. Please try again later.';
+            }
+        }
+
+        function createMarvelFact(text) {
+            const chip = document.createElement('span');
+            chip.className = 'rounded-lg border border-white/10 bg-black/25 px-2.5 py-1.5';
+            chip.textContent = text;
+            return chip;
+        }
+
+        async function openMcuTitle(button) {
+            const title = button.dataset.title;
+            const mediaType = button.dataset.mediaType;
+            button.disabled = true;
+            button.textContent = 'Loading...';
+            try {
+                const params = new URLSearchParams({ api_key: TMDB_API_KEY, query: title });
+                const response = await fetch(`${TMDB_BASE_URL}/search/${mediaType}?${params}`);
+                if (!response.ok) throw new Error(`TMDB returned ${response.status}`);
+                const data = await response.json();
+                const result = data.results?.[0];
+                if (!result) {
+                    statusMessage.textContent = `Could not find "${title}" in TMDB yet.`;
+                    statusMessage.classList.remove('hidden', 'text-rose-300');
+                    statusMessage.classList.add('flex');
+                    button.disabled = false;
+                    button.textContent = 'Watch';
+                    return;
+                }
+                window.location.href = `watch.html?id=${encodeURIComponent(result.id)}&type=${mediaType}&anime=0`;
+            } catch (error) {
+                console.error(`Unable to find "${title}" on TMDB:`, error);
+                statusMessage.textContent = `Could not open "${title}". Please try again.`;
+                statusMessage.classList.remove('hidden');
+                statusMessage.classList.add('flex', 'text-rose-300');
+                button.disabled = false;
+                button.textContent = 'Watch';
+            }
+        }
+
+        document.getElementById('closeMarvelDetails').addEventListener('click', closeMarvelDetails);
+        document.getElementById('marvelDetailsModal').addEventListener('click', event => {
+            if (event.target.id === 'marvelDetailsModal') closeMarvelDetails();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && !document.getElementById('marvelDetailsModal').classList.contains('hidden')) {
+                closeMarvelDetails();
+            }
+        });
+
+        async function loadMovies(page) {
+            const requestId = ++latestMovieRequest;
+            statusMessage.classList.remove('hidden', 'text-rose-300');
+            statusMessage.replaceChildren();
+            const spinner = document.createElement('span');
+            spinner.className = 'w-5 h-5 border-2 border-cyan-300 border-t-transparent rounded-full spinner';
+            spinner.setAttribute('aria-hidden', 'true');
+            statusMessage.append(spinner, document.createTextNode(`Loading ${collection === 'mcu' ? 'MCU' : 'Marvel'} movies...`));
+            movieGrid.replaceChildren();
+            pagination.classList.add('hidden');
+
+            try {
+                const params = new URLSearchParams({
+                    api_key: TMDB_API_KEY,
+                    sort_by: document.getElementById('sortOrder').value,
+                    page: String(page)
+                });
+                const year = document.getElementById('yearFilter').value;
+                if (year) {
+                    params.set('primary_release_date.gte', `${year}-01-01`);
+                    params.set('primary_release_date.lte', `${year}-12-31`);
+                }
+                if (collection === 'mcu') {
+                    params.set('with_companies', String(MARVEL_STUDIOS_COMPANY_ID));
+                } else {
+                    params.set('with_keywords', String(MARVEL_COMICS_KEYWORD_ID));
+                }
+                const response = await fetch(`${TMDB_BASE_URL}/discover/movie?${params}`);
+                if (!response.ok) throw new Error(`TMDB returned ${response.status}`);
+                const data = await response.json();
+                if (!Array.isArray(data.results)) throw new Error('TMDB returned an invalid movie list');
+                if (requestId !== latestMovieRequest) return;
+
+                currentPage = data.page || page;
+                totalPages = data.total_pages || 1;
+                movieGrid.replaceChildren(...data.results.map(createMovieCard));
+                document.getElementById('resultsCount').textContent =
+                    `${data.total_results || data.results.length} movies`;
+                statusMessage.classList.add('hidden');
+
+                const pager = document.getElementById('pagination');
+                pager.classList.remove('hidden');
+                pager.classList.add('flex');
+                document.getElementById('pageLabel').textContent = `Page ${currentPage} of ${totalPages}`;
+                document.getElementById('previousPage').disabled = currentPage <= 1;
+                document.getElementById('nextPage').disabled = currentPage >= totalPages;
+                if (data.results.length === 0) {
+                    statusMessage.textContent = `No ${collection === 'mcu' ? 'MCU' : 'Marvel'} movies were found.`;
+                    statusMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                if (requestId !== latestMovieRequest) return;
+                console.error('Unable to load Marvel movies:', error);
+                statusMessage.classList.remove('hidden');
+                statusMessage.classList.add('text-rose-300');
+                statusMessage.replaceChildren(document.createTextNode('Could not load Marvel movies. Check your connection and '));
+                const retry = document.createElement('button');
+                retry.type = 'button';
+                retry.className = 'font-bold underline underline-offset-2';
+                retry.textContent = 'try again';
+                retry.addEventListener('click', () => loadMovies(currentPage));
+                statusMessage.append(retry, document.createTextNode('.'));
+            }
+        }
+
+        document.getElementById('previousPage').addEventListener('click', () => {
+            if (currentPage > 1) loadMovies(currentPage - 1);
+        });
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage < totalPages) loadMovies(currentPage + 1);
+        });
+        mcuTimeline.addEventListener('click', event => {
+            const button = event.target.closest('.timeline-watch');
+            if (button) openMcuTitle(button);
+        });
+        setupCollection();
+        setupCatalogPreferences();
+        if (collection !== 'mcu') loadMovies(currentPage);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js').catch(error => {
+                    console.error('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
+    <script src="visitor-log.js?v=2"></script>
+</body>
+</html>

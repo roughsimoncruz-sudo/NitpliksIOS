@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Nitpliks">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#020817">
+    <title>Anime - Nitpliks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --panel-border: rgba(148, 163, 184, 0.18); }
+        * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(103, 232, 249, 0.14), transparent 22%),
+                radial-gradient(circle at 82% 20%, rgba(139, 92, 246, 0.12), transparent 24%),
+                linear-gradient(180deg, #020817 0%, #020b1a 100%);
+            color: #f8fafc;
+        }
+        .glass-nav {
+            background: rgba(2, 8, 23, 0.78);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        .anime-card {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.72));
+            border: 1px solid var(--panel-border);
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .anime-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(103, 232, 249, 0.5);
+            box-shadow: 0 24px 40px rgba(2, 8, 23, 0.4);
+        }
+        .poster { aspect-ratio: 2 / 3; background: rgba(15, 23, 42, 0.8); }
+        .pager-button {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--panel-border);
+            transition: all 0.2s ease;
+        }
+        .pager-button:not(:disabled):hover {
+            color: #020817;
+            background: #67e8f9;
+            border-color: #67e8f9;
+        }
+        .pager-button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .genre-chip {
+            flex: 0 0 auto;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(15, 23, 42, 0.72);
+            color: #cbd5e1;
+            transition: all 0.2s ease;
+        }
+        .genre-chip:hover { border-color: rgba(103, 232, 249, 0.45); color: #a5f3fc; }
+        .genre-chip.active {
+            border-color: transparent;
+            background: linear-gradient(135deg, #67e8f9, #38bdf8);
+            color: #020817;
+            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.2);
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
+        body { background: linear-gradient(180deg, #080808, #101010 45%, #080808); color: #f8fafc; }
+        .glass-nav { position: sticky; top: 0.75rem; margin: 0.75rem auto 0; width: calc(100% - 1.5rem); max-width: 1280px; border: 1px solid rgba(255,255,255,.1); border-radius: 1rem; background: rgba(8,8,8,.9); box-shadow: 0 12px 36px rgba(0,0,0,.4); }
+        .glass-nav a:hover { color: #fda4af; }
+        .collection-hero { position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 1.5rem; padding: 2rem; background: radial-gradient(ellipse at 92% 10%, rgba(225,29,53,.28), transparent 40%), linear-gradient(120deg, #171717, #0b0b0b 70%); }
+        .collection-hero::after { content: ""; position: absolute; width: 14rem; height: 14rem; right: 7%; top: -10rem; border-radius: 50%; border: 1px solid rgba(251,51,72,.25); box-shadow: 0 0 0 2rem rgba(251,51,72,.03), 0 0 0 4rem rgba(251,51,72,.025); pointer-events: none; }
+        .collection-hero > * { position: relative; z-index: 1; }
+        .collection-eyebrow { color: #fda4af; }
+        .anime-card { background: #171717; border-color: rgba(255,255,255,.1); border-radius: .9rem; }
+        .anime-card:hover { transform: scale(1.025); border-color: rgba(251,51,72,.65); box-shadow: 0 18px 34px rgba(0,0,0,.48); z-index: 2; }
+        .anime-card > a > div:last-child { background: linear-gradient(180deg, #1a1a1a, #111); }
+        .anime-card .text-cyan-100 { color: #fecdd3; }
+        .genre-chip { background: #1b1b1b; border-color: rgba(255,255,255,.12); }
+        .genre-chip:hover { border-color: #fb3348; color: #fecdd3; }
+        .genre-chip.active, .pager-button:not(:disabled):hover { background: #e11d35; border-color: #e11d35; color: #fff; box-shadow: 0 8px 20px rgba(225,29,53,.2); }
+        .pager-button { background: #171717; border-color: rgba(255,255,255,.12); }
+        .spinner { border-color: #fb3348; border-top-color: transparent; }
+        :focus-visible { outline: 2px solid #fb3348; outline-offset: 3px; }
+        .compact-cards #animeGrid { grid-template-columns: repeat(auto-fill,minmax(145px,1fr)); }
+        @media (max-width: 640px) { .collection-hero { padding: 1.35rem; border-radius: 1rem; } }
+    </style>
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="site-redesign.css">
+    <script src="profile-storage.js"></script>
+    <script src="details-modal.js?v=2" defer></script>
+    <script src="sync.js"></script>
+</head>
+<body class="selection:bg-cyan-300 selection:text-slate-950">
+    <nav class="glass-nav sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="index.html" class="flex shrink-0 items-center gap-2.5 text-white font-extrabold text-sm hover:text-rose-300 transition-colors">
+                <img class="site-logo" src="nitpliks-logo.png?v=40" width="160" height="53" alt="Nitpliks home">
+            </a>
+            <div class="ml-6 flex min-w-0 max-w-[68vw] items-center gap-3 overflow-x-auto whitespace-nowrap text-[9px] font-extrabold uppercase tracking-wider text-slate-400 sm:max-w-none sm:gap-5 sm:text-[10px]">
+                <a href="kdrama.html" class="hover:text-rose-300">K-Drama</a>
+                <a href="marvel.html" class="hover:text-rose-300">Marvel</a>
+                <a href="index.html" class="hover:text-rose-300">Discover</a>
+                <a href="my-list.html" class="hover:text-rose-300">My List</a>
+                <a href="search-results.html" class="hover:text-rose-300">Search</a>
+                <a href="release-calendar.html" class="hover:text-rose-300">Releases</a>
+                <a href="my-ratings.html" class="hover:text-rose-300">Ratings</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <header class="collection-hero mb-9 sm:mb-12">
+            <p class="collection-eyebrow text-[10px] font-black uppercase tracking-[0.3em] mb-3">The Anime Collection</p>
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white">Popular Anime</h1>
+                    <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Discover popular animated series, with posters, ratings, and episode details.</p>
+                </div>
+                <span id="resultsCount" class="text-xs font-bold text-slate-400"></span>
+            </div>
+        </header>
+
+        <section aria-labelledby="genreHeading" class="mb-7 space-y-3">
+            <div class="flex items-center justify-between gap-3">
+                <h2 id="genreHeading" class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Browse by genre</h2>
+                <span class="text-[10px] font-semibold text-slate-500">Animation included in every selection</span>
+            </div>
+            <div id="genreSelector" role="group" aria-label="Filter anime by genre" class="flex gap-2 overflow-x-auto pb-2">
+                <button type="button" class="genre-chip active rounded-xl px-4 py-2.5 text-xs font-bold" data-genre="all" aria-pressed="true">All Anime</button>
+                <button type="button" class="genre-chip rounded-xl px-4 py-2.5 text-xs font-bold" data-genre="10759" aria-pressed="false">Action &amp; Adventure</button>
+                <button type="button" class="genre-chip rounded-xl px-4 py-2.5 text-xs font-bold" data-genre="35" aria-pressed="false">Comedy</button>
+                <button type="button" class="genre-chip rounded-xl px-4 py-2.5 text-xs font-bold" data-genre="18" aria-pressed="false">Drama</button>
+                <button type="button" class="genre-chip rounded-xl px-4 py-2.5 text-xs font-bold" data-genre="10765" aria-pressed="false">Sci-Fi &amp; Fantasy</button>
+                <button type="button" class="genre-chip rounded-xl px-4 py-2.5 text-xs font-bold" data-genre="9648" aria-pressed="false">Mystery</button>
+                <button type="button" class="genre-chip rounded-xl px-4 py-2.5 text-xs font-bold" data-genre="10762" aria-pressed="false">Kids</button>
+            </div>
+        </section>
+
+        <section class="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-white/5 p-4" aria-label="Anime sorting and display options">
+            <label class="grid gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                Sort by
+                <select id="sortOrder" class="min-h-10 rounded-lg border border-white/10 bg-neutral-900 px-3 text-xs normal-case tracking-normal text-white">
+                    <option value="popularity.desc">Popularity</option>
+                    <option value="vote_average.desc">Highest rated</option>
+                    <option value="first_air_date.desc">Newest</option>
+                    <option value="first_air_date.asc">Oldest</option>
+                </select>
+            </label>
+            <label class="grid gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                Year
+                <select id="yearFilter" class="min-h-10 rounded-lg border border-white/10 bg-neutral-900 px-3 text-xs normal-case tracking-normal text-white">
+                    <option value="">Any year</option>
+                </select>
+            </label>
+            <label class="inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-slate-400">
+                <input id="compactCardsToggle" type="checkbox" class="h-4 w-4 accent-rose-600">
+                Compact cards
+            </label>
+        </section>
+
+        <div id="statusMessage" role="status" aria-live="polite" class="flex min-h-12 items-center gap-3 text-sm text-slate-400">
+            <span class="w-5 h-5 border-2 border-cyan-300 border-t-transparent rounded-full spinner" aria-hidden="true"></span>
+            Loading anime...
+        </div>
+        <div id="animeGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5"></div>
+        <nav id="pagination" aria-label="Anime pages" class="hidden mt-10 items-center justify-center gap-4">
+            <button id="previousPage" type="button" class="pager-button rounded-xl px-4 py-2.5 text-xs font-extrabold text-white">Previous</button>
+            <span id="pageLabel" class="min-w-20 text-center text-xs font-bold text-slate-400"></span>
+            <button id="nextPage" type="button" class="pager-button rounded-xl px-4 py-2.5 text-xs font-extrabold text-white">Next</button>
+        </nav>
+    </main>
+
+    <footer class="mt-auto border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+        Discover your next favorite anime.
+    </footer>
+
+    <script>
+        const TMDB_API_KEY = "295a780c3e5aae731d6f2e804c6d13e5";
+        const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+        const TMDB_IMG_URL = "https://image.tmdb.org/t/p/w500";
+        const ANIME_GENRES = {
+            10759: 'Action', 35: 'Comedy', 18: 'Drama', 10765: 'Fantasy',
+            9648: 'Mystery', 10762: 'Kids', 16: 'Animation', 10768: 'War'
+        };
+        let currentPage = 1;
+        let totalPages = 1;
+        let selectedGenre = 'all';
+        let latestRequest = 0;
+
+        const statusMessage = document.getElementById('statusMessage');
+        const animeGrid = document.getElementById('animeGrid');
+        const pagination = document.getElementById('pagination');
+
+        function formatRating(value) {
+            const rating = Number(value);
+            return Number.isFinite(rating) && rating > 0 ? rating.toFixed(1) : 'N/A';
+        }
+
+        function setupCatalogPreferences() {
+            const yearSelect = document.getElementById('yearFilter');
+            for (let year = new Date().getFullYear(); year >= 1950; year--) {
+                const option = document.createElement('option');
+                option.value = String(year);
+                option.textContent = String(year);
+                yearSelect.append(option);
+            }
+            const compactToggle = document.getElementById('compactCardsToggle');
+            compactToggle.checked = localStorage.getItem('clique_compact_cards') === 'true';
+            document.body.classList.toggle('compact-cards', compactToggle.checked);
+            compactToggle.addEventListener('change', () => {
+                localStorage.setItem('clique_compact_cards', String(compactToggle.checked));
+                document.body.classList.toggle('compact-cards', compactToggle.checked);
+            });
+            document.getElementById('sortOrder').addEventListener('change', () => loadAnime(1));
+            yearSelect.addEventListener('change', () => loadAnime(1));
+        }
+
+        function createAnimeCard(anime) {
+            const card = document.createElement('article');
+            card.className = 'anime-card group relative overflow-hidden rounded-2xl text-left';
+            const link = document.createElement('a');
+            link.className = 'block';
+            link.href = `index.html?details=${encodeURIComponent(anime.id)}&type=tv&anime=1`;
+            link.setAttribute('aria-label', `Watch ${anime.name || 'Untitled'}`);
+
+            const poster = document.createElement('div');
+            poster.className = 'poster relative overflow-hidden';
+            const image = document.createElement('img');
+            image.className = 'h-full w-full object-cover transition-transform duration-500 group-hover:scale-105';
+            image.loading = 'lazy';
+            image.alt = anime.name ? `${anime.name} poster` : 'Anime poster';
+            image.src = anime.poster_path
+                ? `${TMDB_IMG_URL}${anime.poster_path}`
+                : 'https://placehold.co/500x750/0f172a/e2e8f0?text=No+Poster';
+            poster.append(image);
+
+            const rating = document.createElement('span');
+            rating.className = 'absolute left-2.5 top-2.5 rounded-lg border border-white/10 bg-slate-950/85 px-2 py-1 text-[10px] font-black text-amber-300';
+            rating.textContent = `★ ${formatRating(anime.vote_average)}`;
+            poster.append(rating);
+
+            const details = document.createElement('div');
+            details.className = 'p-3.5 space-y-2';
+            const title = document.createElement('h2');
+            title.className = 'truncate text-xs font-extrabold text-white';
+            title.textContent = anime.name || 'Untitled';
+            const date = document.createElement('p');
+            date.className = 'text-[10px] font-semibold text-slate-400';
+            const year = anime.first_air_date ? anime.first_air_date.slice(0, 4) : 'Year unavailable';
+            const votes = Number(anime.vote_count) || 0;
+            date.textContent = `${year} · ${votes.toLocaleString()} votes`;
+            const overview = document.createElement('p');
+            overview.className = 'line-clamp-3 min-h-[3.6em] text-[10px] leading-relaxed text-slate-400';
+            overview.textContent = anime.overview || 'Synopsis not available yet.';
+            const genres = document.createElement('div');
+            genres.className = 'flex flex-wrap gap-1.5';
+            (anime.genre_ids || []).slice(0, 2).forEach(id => {
+                if (!ANIME_GENRES[id]) return;
+                const chip = document.createElement('span');
+                chip.className = 'rounded-full border border-cyan-200/10 bg-slate-900/80 px-2 py-1 text-[8px] font-bold text-cyan-100';
+                chip.textContent = ANIME_GENRES[id];
+                genres.append(chip);
+            });
+            details.append(title, date, overview, genres);
+            link.append(poster, details);
+            const saved = readCatalogWatchlist().some(item => String(item.id) === String(anime.id));
+            const saveButton = document.createElement('button');
+            saveButton.type = 'button';
+            saveButton.className = 'absolute right-2.5 top-2.5 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/75 text-sm font-black text-white hover:border-rose-400 hover:bg-rose-700';
+            saveButton.textContent = saved ? '✓' : '+';
+            saveButton.setAttribute('aria-label', `${saved ? 'Remove from' : 'Add to'} My List: ${anime.name || 'Untitled'}`);
+            saveButton.setAttribute('aria-pressed', String(saved));
+            saveButton.addEventListener('click', () => toggleCatalogWatchlist(anime.id, anime.name || 'Untitled', anime.poster_path ? `${TMDB_IMG_URL}${anime.poster_path}` : '', 'tv', true, saveButton));
+            card.append(link, saveButton);
+            return card;
+        }
+
+        function readCatalogWatchlist() {
+            try {
+                const list = JSON.parse(localStorage.getItem('clique_watchlist') || '[]');
+                return Array.isArray(list) ? list : [];
+            } catch (error) {
+                console.error('Unable to read My List:', error);
+                return [];
+            }
+        }
+
+        function toggleCatalogWatchlist(id, title, image, type, isAnime, button) {
+            const list = readCatalogWatchlist();
+            const index = list.findIndex(item => String(item.id) === String(id));
+            if (index >= 0) list.splice(index, 1);
+            else list.push({ id: String(id), title, image, type, isAnime });
+            localStorage.setItem('clique_watchlist', JSON.stringify(list));
+            const saved = index < 0;
+            button.textContent = saved ? '✓' : '+';
+            button.setAttribute('aria-pressed', String(saved));
+            button.setAttribute('aria-label', `${saved ? 'Remove from' : 'Add to'} My List: ${title}`);
+        }
+
+        async function loadAnime(page) {
+            const requestId = ++latestRequest;
+            statusMessage.classList.remove('hidden', 'text-rose-300');
+            statusMessage.classList.add('flex');
+            statusMessage.replaceChildren();
+            const spinner = document.createElement('span');
+            spinner.className = 'w-5 h-5 border-2 border-cyan-300 border-t-transparent rounded-full spinner';
+            spinner.setAttribute('aria-hidden', 'true');
+            const activeGenre = document.querySelector('.genre-chip.active')?.textContent.trim() || 'anime';
+            statusMessage.append(spinner, document.createTextNode(`Loading ${activeGenre.toLowerCase()}...`));
+            animeGrid.replaceChildren();
+            pagination.classList.add('hidden');
+
+            try {
+                const params = new URLSearchParams({
+                    api_key: TMDB_API_KEY,
+                    with_genres: selectedGenre === 'all' ? '16' : `16,${selectedGenre}`,
+                    sort_by: document.getElementById('sortOrder').value,
+                    page: String(page)
+                });
+                const year = document.getElementById('yearFilter').value;
+                if (year) {
+                    params.set('first_air_date.gte', `${year}-01-01`);
+                    params.set('first_air_date.lte', `${year}-12-31`);
+                }
+                const response = await fetch(`${TMDB_BASE_URL}/discover/tv?${params}`);
+                if (!response.ok) throw new Error(`TMDB returned ${response.status}`);
+                const data = await response.json();
+                if (!Array.isArray(data.results)) throw new Error('TMDB returned an invalid anime list');
+                if (requestId !== latestRequest) return;
+
+                currentPage = data.page || page;
+                totalPages = data.total_pages || 1;
+                animeGrid.replaceChildren(...data.results.map(createAnimeCard));
+                document.getElementById('resultsCount').textContent =
+                    `${data.total_results || data.results.length} series`;
+                statusMessage.classList.add('hidden');
+                statusMessage.classList.remove('flex');
+
+                pagination.classList.remove('hidden');
+                pagination.classList.add('flex');
+                document.getElementById('pageLabel').textContent = `Page ${currentPage} of ${totalPages}`;
+                document.getElementById('previousPage').disabled = currentPage <= 1;
+                document.getElementById('nextPage').disabled = currentPage >= totalPages;
+                if (data.results.length === 0) {
+                    statusMessage.textContent = 'No anime series were found.';
+                    statusMessage.classList.remove('hidden');
+                    statusMessage.classList.add('flex');
+                }
+            } catch (error) {
+                if (requestId !== latestRequest) return;
+                console.error('Unable to load anime:', error);
+                statusMessage.classList.remove('hidden');
+                statusMessage.classList.add('flex', 'text-rose-300');
+                statusMessage.replaceChildren(document.createTextNode('Could not load anime. Check your connection and '));
+                const retry = document.createElement('button');
+                retry.type = 'button';
+                retry.className = 'font-bold underline underline-offset-2';
+                retry.textContent = 'try again';
+                retry.addEventListener('click', () => loadAnime(currentPage));
+                statusMessage.append(retry, document.createTextNode('.'));
+            }
+        }
+
+        document.getElementById('previousPage').addEventListener('click', () => {
+            if (currentPage > 1) loadAnime(currentPage - 1);
+        });
+        document.getElementById('nextPage').addEventListener('click', () => {
+            if (currentPage < totalPages) loadAnime(currentPage + 1);
+        });
+        document.getElementById('genreSelector').addEventListener('click', event => {
+            const button = event.target.closest('.genre-chip');
+            if (!button || button.dataset.genre === selectedGenre) return;
+            selectedGenre = button.dataset.genre;
+            document.querySelectorAll('.genre-chip').forEach(chip => {
+                const isActive = chip === button;
+                chip.classList.toggle('active', isActive);
+                chip.setAttribute('aria-pressed', String(isActive));
+            });
+            loadAnime(1);
+        });
+        setupCatalogPreferences();
+        loadAnime(currentPage);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js?v=48').catch(error => {
+                    console.error('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
+    <script src="visitor-log.js?v=2"></script>
+</body>
+</html>

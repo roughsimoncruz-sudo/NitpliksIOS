@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shared Collection - Nitpliks</title><script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="site-redesign.css"></head>
+<body>
+<main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+<a href="index.html" class="inline-flex min-h-10 items-center text-xs font-bold text-cyan-200">← Discover</a>
+<header class="mt-7"><p class="text-[10px] font-black uppercase tracking-[.3em] text-cyan-200">Shared collection</p><h1 id="title" class="mt-2 text-4xl font-black">Loading…</h1><p id="description" class="mt-2 text-sm text-slate-400"></p></header>
+<p id="status" class="mt-5 text-sm text-slate-400"></p><div id="items" class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5"></div>
+</main>
+<script>
+const token=new URLSearchParams(location.search).get('token')||'';
+fetch(`features.php?action=public-collection&token=${encodeURIComponent(token)}`).then(async response=>{const result=await response.json();if(!response.ok)throw new Error(result.error||'Collection unavailable.');document.getElementById('title').textContent=result.collection.name;document.getElementById('description').textContent=result.collection.description||'Shared from Nitpliks';document.getElementById('status').textContent=`${result.items.length} title${result.items.length===1?'':'s'}`;document.getElementById('items').replaceChildren(...result.items.map(row=>{const item=typeof row.payload==='string'?JSON.parse(row.payload):row.payload;const link=document.createElement('a');link.href=`index.html?details=${encodeURIComponent(item.id)}&type=${item.type||'movie'}&anime=${item.isAnime?1:0}`;link.className='overflow-hidden rounded-xl border border-white/10 bg-white/5';const image=document.createElement('img');image.src=/^https:\/\//.test(item.image||'')?item.image:'https://placehold.co/500x750/171717/ffffff?text=No+Poster';image.alt=`${item.title||'Title'} poster`;image.className='aspect-[2/3] w-full object-cover';const title=document.createElement('h2');title.textContent=item.title||'Untitled';title.className='truncate px-3 py-3 text-xs font-extrabold';link.append(image,title);return link;}));}).catch(error=>{document.getElementById('status').textContent=error.message;});
+</script>
+    <script src="visitor-log.js?v=2"></script>
+</body></html>
