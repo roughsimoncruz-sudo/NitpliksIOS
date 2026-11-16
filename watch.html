@@ -1144,7 +1144,7 @@
             }
             const videoBox = document.getElementById('videoBox');
             videoBox.innerHTML = `
-                <iframe src="${playerUrl}" title="Video player" frameborder="0" loading="eager" allowfullscreen webkitallowfullscreen mozallowfullscreen allow="${playerAllow}" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                <iframe src="${playerUrl}" title="Video player" frameborder="0" loading="eager" sandbox="allow-forms allow-scripts allow-same-origin allow-presentation" allowfullscreen webkitallowfullscreen mozallowfullscreen allow="${playerAllow}" referrerpolicy="strict-origin-when-cross-origin"></iframe>
             `;
             playerStartTimeout = window.setTimeout(() => {
                 setPlayerStatus('Playback has not been confirmed yet. The selected player may be slow or may not support embedding here. Retry it or try another player.', true);

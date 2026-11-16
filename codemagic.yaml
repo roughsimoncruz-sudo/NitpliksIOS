@@ -21,6 +21,14 @@ workflows:
           fi
       - name: Sync Capacitor iOS
         script: npx cap sync ios
+      - name: Hide iOS status bar
+        script: |
+          /usr/libexec/PlistBuddy \
+            -c "Set :UIViewControllerBasedStatusBarAppearance false" \
+            ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy \
+            -c "Add :UIStatusBarHidden bool true" \
+            ios/App/App/Info.plist
       - name: Set iOS app icon
         script: |
           cp ios-app-icon.png \
