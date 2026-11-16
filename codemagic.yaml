@@ -21,6 +21,10 @@ workflows:
           fi
       - name: Sync Capacitor iOS
         script: npx cap sync ios
+      - name: Set iOS app icon
+        script: |
+          cp ios-app-icon.png \
+            ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png
       - name: Build unsigned IPA for Sideloadly
         script: |
           xcodebuild \
